@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CueTap 单位置演示验收</title>
+  <style>
+    :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+    body { max-width: 900px; margin: 40px auto; padding: 0 24px; line-height: 1.7; }
+    h1 { font-size: 26px; } h2 { font-size: 18px; margin-top: 30px; }
+    textarea, pre { box-sizing: border-box; width: 100%; padding: 18px; border: 1px solid #8888; border-radius: 6px; font: 16px/1.7 ui-monospace, monospace; }
+    textarea { min-height: 210px; resize: vertical; tab-size: 4; }
+    textarea:focus { outline: 2px solid #3880d4; }
+    button { font: inherit; padding: 6px 16px; margin-right: 10px; cursor: pointer; }
+    #result { min-height: 2em; white-space: pre-wrap; }
+    .note { opacity: .75; }
+  </style>
+</head>
+<body>
+  <h1>CueTap 单位置演示验收</h1>
+  <p>此页把原来的 test.html 打字示例变成可操作的验收场景。页面本身不模拟输入，也不替 CueTap 推进动作。</p>
+  <ol>
+    <li>提前运行 cuetap 并加载 tests/html-demo.json（默认示例），确认显示 38 个动作。可以先选中文输入源，以验证开启后自动切英文。</li>
+    <li>点击下方空白输入框，按 Cmd+Shift+R 开启演示，完全松开组合键，确认已切为 ABC / U.S.。</li>
+    <li>随便敲普通键，共 38 次。方向键动作也各占一次。</li>
+    <li>完成后多敲几下，确认内容不再变化且仍保持英文，再按 Cmd+Shift+R 关闭，确认恢复开启前的输入源。</li>
+    <li>点击“检查结果”。通过后可重新点入输入框，按普通键确认输入已恢复。</li>
+  </ol>
+  <label for="editor">演示输入区</label>
+  <textarea id="editor" spellcheck="false" autocorrect="off" autocapitalize="off" autocomplete="off" aria-describedby="environment"></textarea>
+  <p id="environment" class="note">这是原生 textarea，回车只插入一个换行，不自动缩进。真实代码编辑器的自动缩进应另行验收，播放器不补空格。</p>
+  <p><button id="check" type="button">检查结果</button><button id="reset" type="button">清空输入区</button></p>
+  <p class="note">清空前先用热键关闭 CueTap。按钮只清空本页，不会重置程序或代替演示热键。</p>
+  <p id="result" role="status" aria-live="polite">等待执行。输入区初始为空，光标从开头开始。</p>
+  <h2>本页的精确预期结果</h2>
+  <pre id="expected"></pre>
+  <p>最终光标应在 hello 后、闭合标签前。保留示例中的 class:，本验收不修正 HTML 语法。</p>
+  <h2>按键顺序检查点</h2>
+  <ol>
+    <li>第 1 至 11 下：逐字输入 &lt;div&gt;&lt;/div&gt;。</li>
+    <li>第 12 至 18 下：光标向左七次，内容不变，停在第一个 &gt; 前。</li>
+    <li>第 19 至 31 下：逐字输入一个空格和 class:&quot;body&quot;。</li>
+    <li>第 32 下：右移一次，进入两个标签之间。</li>
+    <li>第 33 下：回车。</li>
+    <li>第 34 至 38 下：逐字输入 hello。</li>
+  </ol>
+  <p class="note">页面是手动验收入口。自动化脚本另行验证进度、原生按键事件以及真实 CLI 的拦截，不以本页结果代替所有测试。</p>
+  <script>
+    const editor = document.getElementById('editor');
+    const result = document.getElementById('result');
+    const expected = '<div class:"body">\nhello</div>';
+    document.getElementById('expected').textContent = expected;
+    document.getElementById('check').addEventListener('click', () => {
+      if (editor.value !== expected) {
+        let at = 0;
+        while (at < Math.min(editor.value.length, expected.length) && editor.value[at] === expected[at]) at++;
+        result.textContent = `未通过：内容与预期不同，第一个差异在第 ${at + 1} 个字符。实际 ${editor.value.length} 个字符，预期 ${expected.length} 个字符。`;
+        return;
+      }
+      const cursor = expected.length - '</div>'.length;
+      if (editor.selectionStart !== cursor || editor.selectionEnd !== cursor) {
+        result.textContent = '内容通过，光标位置未通过：应停在 hello 后、闭合标签前。检查前不要另行移动光标。';
+        return;
+      }
+      result.textContent = '通过：内容和光标位置均符合预期。请另行确认完成后的输入锁定、热键关闭及正常输入恢复。';
+    });
+    document.getElementById('reset').addEventListener('click', () => {
+      editor.value = '';
+      editor.focus();
+      editor.setSelectionRange(0, 0);
+      result.textContent = '输入区已清空。确认 CueTap 已关闭，再按热键从头开始。';
+    });
+  </script>
+</body>
+</html>

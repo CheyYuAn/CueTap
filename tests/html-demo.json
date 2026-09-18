@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "name": "HTML 演示",
+  "actions": [
+    { "type": "text", "value": "<div></div>" },
+    { "type": "key", "key": "left", "count": 7 },
+    { "type": "text", "value": " class:\"body\"" },
+    { "type": "key", "key": "right" },
+    { "type": "key", "key": "enter" },
+    { "type": "text", "value": "hello" }
+  ]
+}

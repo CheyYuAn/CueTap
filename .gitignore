@@ -1,0 +1,16 @@
+.DS_Store
+build/
+DerivedData/
+xcuserdata/
+*.xcuserstate
+
+# Private data and local assistant files
+AGENTS.md
+CLAUDE.md
+secrets/
+.codex/
+.claude/
+.cursor/
+
+# Project docs stay local
+docs/
