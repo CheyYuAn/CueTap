@@ -14,3 +14,6 @@ secrets/
 
 # Project docs stay local
 docs/
+
+# Release archives built by scripts/release.sh
+cuetap-*-macos.tar.gz
