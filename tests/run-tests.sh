@@ -22,7 +22,7 @@ xcodebuild -project CueTap.xcodeproj -scheme CueTap -configuration Debug \
     -quiet build-for-testing
 
 if [[ "$mode" == --unit ]]; then
-    xcrun xctest -XCTest DemoControllerTests,DemoScriptTests,CommandOptionsTests,ConfigurationCLITests,DemoInputSourceTests,DemoHotkeyTests,RuntimeSettingsTests,MultiSegmentTests,ConfigurationStoreTests,ConfigurationCommandsTests,DoctorTests build/products/Debug/CueTapTests.xctest \
+    xcrun xctest -XCTest DemoControllerTests,DemoScriptTests,CommandOptionsTests,ConfigurationCLITests,DemoInputSourceTests,DemoHotkeyTests,RuntimeSettingsTests,MultiSegmentTests,ConfigurationStoreTests,ConfigurationCommandsTests,DoctorTests,CompletionLockTests build/products/Debug/CueTapTests.xctest \
         2>&1 | tee build/unit-test-output.log
 else
     if pgrep -x cuetap >/dev/null; then

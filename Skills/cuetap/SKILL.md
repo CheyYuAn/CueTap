@@ -7,7 +7,7 @@ description: Create, select, and manage CueTap keyboard demo configurations thro
 
 Respond in the language used in the user's messages. The Skill is written in English; conversation need not be. Preserve CLI commands, JSON keys, and user-provided content.
 
-CueTap is a macOS CLI written in Swift. One executable provides both the resident process and control commands. Its menu bar shows `Demo: On/Off`, `Configuration: <name>`, segment/phase information, and `Quit CueTap`. Configuration choices expand inline using native menu controls. There is no main window, Dock icon, or separate Swift App. Use the CLI for control.
+CueTap is a macOS CLI written in Swift. One executable provides both the resident process and control commands. Its menu bar shows `State: On/Off` with the toggle shortcut, the advance shortcut, `Config: <name>`, `Launch at Login`, `Open Configurations Folder`, `Stop CueTap`, and `Quit CueTap`. Configuration choices expand inline using native menu controls. There is no main window, Dock icon, or separate Swift App. Use the CLI for control.
 
 ## Choose the relevant scene
 

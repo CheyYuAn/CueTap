@@ -16,6 +16,9 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         static let minWidth: CGFloat = 240
         static let maxWidth: CGFloat = 320
         static let iconPoint: CGFloat = 13
+        /// Every list icon is drawn centred in a square of this size, so names keep one left edge
+        /// whatever the symbol's own ink box is.
+        static let iconColumn: CGFloat = 16
         /// Spare width kept clear of AppKit's own truncation, which drops a whole trailing word
         /// instead of clipping with an ellipsis. Titles carrying an icon need the wider margin.
         static let slack: CGFloat = 16
@@ -71,6 +74,7 @@ final class StatusMenu: NSObject, NSMenuDelegate {
     private let trailing: CGFloat
     private var rowWidth: CGFloat = Metrics.minWidth
     private var choiceItems: [NSMenuItem] = []
+    private var icons: [String: NSImage] = [:]
     private var expanded = false
     private var canSelect = true
     private let configurations: () throws -> [ConfigurationInfo]
@@ -232,7 +236,7 @@ final class StatusMenu: NSObject, NSMenuDelegate {
                 let entries = try configurations()
                 // Choices stay inside the width the menu already has: the window does not grow
                 // once the list opens during tracking.
-                let limit = rowWidth - Metrics.titleInset - trailing - Metrics.iconPoint
+                let limit = rowWidth - Metrics.titleInset - trailing - Metrics.iconColumn
                     - Metrics.gap - Metrics.iconSlack
                 for entry in entries {
                     let row = NSMenuItem(title: entry.name, action: #selector(selectConfiguration(_:)), keyEquivalent: "")
@@ -292,30 +296,68 @@ final class StatusMenu: NSObject, NSMenuDelegate {
     /// An SF Symbol inside the title keeps the icon under this code's control: an item image is
     /// not drawn in this menu at all.
     private func choiceTitle(_ symbol: String, _ text: String) -> NSAttributedString {
+        let font = NSFont.menuFont(ofSize: 0)
         let title = NSMutableAttributedString()
         if let icon = tinted(symbol) {
             let attachment = NSTextAttachment()
             attachment.image = icon
-            attachment.bounds = NSRect(x: 0, y: -3, width: icon.size.width, height: icon.size.height)
+            // The icon box is centred on the text's optical centre, half the cap height above
+            // the baseline, so the symbol and the name sit on the same line.
+            attachment.bounds = NSRect(x: 0, y: (font.capHeight - icon.size.height) / 2,
+                                       width: icon.size.width, height: icon.size.height)
             title.append(NSAttributedString(attachment: attachment))
         }
         title.append(NSAttributedString(string: "  " + text, attributes: [
-            .font: NSFont.menuFont(ofSize: 0), .foregroundColor: NSColor.labelColor]))
+            .font: font, .foregroundColor: NSColor.labelColor]))
         return title
     }
 
-    /// Template images are not tinted inside an attributed string, so the symbol is drawn once
-    /// in the label colour.
+    /// Template images are not tinted inside an attributed string, so the symbol is drawn once in
+    /// the label colour. Each symbol has its own ink box, so the drawn pixels are centred in one
+    /// square box: the names after the icons then share a left edge.
     private func tinted(_ symbol: String) -> NSImage? {
+        if let cached = icons[symbol] { return cached }
         guard let base = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)?
             .withSymbolConfiguration(.init(pointSize: Metrics.iconPoint, weight: .regular)) else { return nil }
-        let out = NSImage(size: base.size)
+        let ink = Self.inkBounds(base)
+        let box = NSSize(width: Metrics.iconColumn, height: Metrics.iconColumn)
+        let out = NSImage(size: box)
         out.lockFocus()
-        base.draw(at: .zero, from: .zero, operation: .sourceOver, fraction: 1)
+        base.draw(at: NSPoint(x: (box.width - ink.width) / 2 - ink.minX,
+                              y: (box.height - ink.height) / 2 - ink.minY),
+                  from: .zero, operation: .sourceOver, fraction: 1)
         NSColor.labelColor.set()
-        NSRect(origin: .zero, size: base.size).fill(using: .sourceAtop)
+        NSRect(origin: .zero, size: box).fill(using: .sourceAtop)
         out.unlockFocus()
+        icons[symbol] = out
         return out
+    }
+
+    /// The rectangle the symbol actually paints, in image coordinates. A symbol image carries its
+    /// own padding, so centring the image is not the same as centring the glyph.
+    private static func inkBounds(_ image: NSImage) -> NSRect {
+        let width = Int(ceil(image.size.width)), height = Int(ceil(image.size.height))
+        let full = NSRect(origin: .zero, size: image.size)
+        guard width > 0, height > 0,
+              let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: width, pixelsHigh: height,
+                                         bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+                                         colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)
+        else { return full }
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
+        image.draw(at: .zero, from: .zero, operation: .sourceOver, fraction: 1)
+        NSGraphicsContext.restoreGraphicsState()
+        var minX = width, maxX = -1, minY = height, maxY = -1
+        for y in 0..<height {
+            for x in 0..<width where (rep.colorAt(x: x, y: y)?.alphaComponent ?? 0) > 0.05 {
+                minX = min(minX, x); maxX = max(maxX, x)
+                minY = min(minY, y); maxY = max(maxY, y)
+            }
+        }
+        guard maxX >= minX, maxY >= minY else { return full }
+        // Bitmap rows run from the top; the drawing origin runs from the bottom.
+        return NSRect(x: CGFloat(minX), y: CGFloat(height - 1 - maxY),
+                      width: CGFloat(maxX - minX + 1), height: CGFloat(maxY - minY + 1))
     }
 
     private func width(of text: String, font: NSFont? = nil) -> CGFloat {

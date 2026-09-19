@@ -232,9 +232,11 @@ final class KeyboardSessionIntegrationTests: XCTestCase {
         XCTAssertTrue(pump(until: { outputKeys().count == expectedKeys.count + 1 }))
         XCTAssertEqual(Array(outputKeys().dropFirst()), expectedKeys)
         XCTAssertEqual(try inputSource.currentID(), englishInputSource)
-        try tapKey(49) // completed: swallowed
+        try tapKey(49) // completed: the lock still swallows late keys
         try tapKey(36)
-        try toggle()
+        XCTAssertEqual(try control("status").status?.state, "on")
+        // The completion lock ends the demo on its own a few seconds after the last action.
+        XCTAssertTrue(pump(until: { (try? control("status").status?.state) == "off" }, timeout: CompletionLock.seconds + 4))
         try tapKey(2) // off again: D reaches the sink
         XCTAssertTrue(pump(until: { physicalKeys().count == 3 }))
         XCTAssertEqual(physicalKeys(), [14, 11, 2])
@@ -255,8 +257,8 @@ final class KeyboardSessionIntegrationTests: XCTestCase {
         XCTAssertEqual(try inputSource.currentID(), originalInputSource)
     }
 
-    private func pump(until condition: () -> Bool) -> Bool {
-        let deadline = Date().addingTimeInterval(4)
+    private func pump(until condition: () -> Bool, timeout: TimeInterval = 4) -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
         while !condition() && Date() < deadline {
             RunLoop.current.run(until: Date().addingTimeInterval(0.01))
         }

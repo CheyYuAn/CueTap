@@ -5,7 +5,7 @@ Use tests/html-demo.json: 38, 38, and 39 actions, ending in hello, world, and cu
 ## Menu layout
 
 1. Open the menu with the demo off. Top to bottom: State with the toggle shortcut, Next segment with the advance shortcut, Config with the current name and a disclosure button, a separator, Launch at Login with an On/Off badge, Open Configurations Folder in grey, a separator, Stop CueTap (disabled while off) and Quit CueTap.
-2. Every row's text must start on the same left edge, including the two custom rows and the configuration choices below their icons. No checkmark may appear anywhere in the menu.
+2. Every row's text must start on the same left edge, including the two custom rows and the configuration choices below their icons. Each choice icon must be centred on its name's line, and every name must start at the same x whatever its icon. No checkmark may appear anywhere in the menu.
 3. Long names must end in an ellipsis, never in a cut-off word, and the full name must appear in the tooltip. `Open Configurations Folder` must always read in full.
 
 ## Configuration folder and list
@@ -28,7 +28,7 @@ Use tests/html-demo.json: 38, 38, and 39 actions, ending in hello, world, and cu
 3. Plain-click the second field and type a few keys. It must remain empty. Scroll, right-click, or Command-drag without advancing.
 4. Command-left-click the second field. Release mouse and Command. Type 38 times. Confirm world and no link navigation, definition jump, selection extension, or extra caret.
 5. Command-left-click the third field, release, and type 39 times. Confirm cuetap. More combination clicks and typing must not restart or advance.
-6. Toggle Off, check results, and confirm ordinary typing and the original input source return.
+6. Keep typing right after the last action: nothing may reach the document. About three seconds later the demo turns itself off, the State row reads Off, and ordinary typing and the original input source return without pressing the toggle.
 
 ## Real editors and control
 

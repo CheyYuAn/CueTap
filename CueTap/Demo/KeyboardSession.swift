@@ -23,6 +23,7 @@ final class KeyboardSession {
     private var watchdog: Timer?
     private var signalSources: [DispatchSourceSignal] = []
     private var advanceGesture = SegmentAdvanceGesture()
+    private let completionLock = CompletionLock()
     private var leftButtonDown = false
     private var normalizeLeftRelease = false
     private var physicalFlags: CGEventFlags = []
@@ -101,6 +102,7 @@ final class KeyboardSession {
             }
             self.checkFrontmostApplication()
             guard self.failure == nil else { return }
+            self.syncCompletionLock()
             do { try self.inputSource.synchronize(active: self.controller.state != .off) }
             catch { self.stop(reason: "Input-source control failed. CueTap has stopped: \(error)") }
         }
@@ -128,6 +130,7 @@ final class KeyboardSession {
 
     func stopDemo() throws {
         controller.cancel()
+        completionLock.cancel()
         advanceGesture.reset()
         output.synchronizeModifiers(CGEventSource.flagsState(.hidSystemState), proxy: nil)
         do { try inputSource.restore() }
@@ -165,6 +168,7 @@ final class KeyboardSession {
                                   modifiers: Self.modifiers(event.flags),
                                   isRepeat: event.getIntegerValueField(.keyboardEventAutorepeat) != 0)
         let result = controller.handle(input, frontmostPID: NSWorkspace.shared.frontmostApplication?.processIdentifier)
+        syncCompletionLock()
         if result.neutralizeModifiers { output.synchronizeModifiers([], proxy: proxy) }
         do { try inputSource.synchronize(active: controller.state != .off) }
         catch {
@@ -210,6 +214,15 @@ final class KeyboardSession {
         return Unmanaged.passUnretained(event)
     }
 
+    /// The demo blocks the keyboard for CompletionLock.seconds after the last action, then ends itself.
+    private func syncCompletionLock() {
+        completionLock.sync(completed: controller.state == .complete) { [weak self] in
+            guard let self, self.controller.state == .complete else { return }
+            // stopDemo reports an input-source failure through stop(reason:) before it throws.
+            try? self.stopDemo()
+        }
+    }
+
     private func checkFrontmostApplication(proxy: CGEventTapProxy? = nil) {
         let previous = controller.state
         controller.frontmostChanged(NSWorkspace.shared.frontmostApplication?.processIdentifier)
@@ -234,6 +247,7 @@ final class KeyboardSession {
     func stop(reason: String? = nil) {
         if let reason { failure = reason }
         controller.cancel()
+        completionLock.cancel()
         do { try inputSource.restore() }
         catch { failure = [failure, String(describing: error)].compactMap { $0 }.joined(separator: "\n") }
         output.synchronizeModifiers(CGEventSource.flagsState(.hidSystemState), proxy: nil)
@@ -244,6 +258,7 @@ final class KeyboardSession {
     }
 
     private func cleanUp() {
+        completionLock.cancel()
         do { try inputSource.restore() }
         catch { failure = [failure, String(describing: error)].compactMap { $0 }.joined(separator: "\n") }
         watchdog?.invalidate()
