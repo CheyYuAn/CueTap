@@ -14,12 +14,12 @@
 </p>
 
 <p align="center">
-  <a href="#why">Why</a> &bull;
-  <a href="#requirements">Requirements</a> &bull;
   <a href="#install">Install</a> &bull;
-  <a href="#quick-start">Quick start</a> &bull;
+  <a href="#permissions">Permissions</a> &bull;
+  <a href="#usage">Usage</a> &bull;
   <a href="#configurations">Configurations</a> &bull;
-  <a href="#using-it-with-an-ai-agent">AI agent</a>
+  <a href="#commands">Commands</a> &bull;
+  <a href="#with-an-ai-agent">AI agent</a>
 </p>
 
 <p align="center">
