@@ -9,8 +9,8 @@
   <img alt="version 0.4.0" src="https://img.shields.io/badge/version-0.4.0-brightgreen">
   <img alt="macOS 26.3+" src="https://img.shields.io/badge/macOS-26.3%2B-lightgrey">
   <img alt="no network" src="https://img.shields.io/badge/network-none-informational">
-  <a href="https://github.com/CheyYuAn/CueTap/stargazers"><img alt="stars" src="https://img.shields.io/github/stars/CheyYuAn/CueTap"></a>
-  <a href="https://github.com/CheyYuAn/CueTap/network/members"><img alt="forks" src="https://img.shields.io/github/forks/CheyYuAn/CueTap"></a>
+  <a href="https://github.com/CheyYuAn/CueTap/stargazers"><img alt="stars" src="https://img.shields.io/github/stars/CheyYuAn/CueTap?cacheSeconds=600"></a>
+  <a href="https://github.com/CheyYuAn/CueTap/network/members"><img alt="forks" src="https://img.shields.io/github/forks/CheyYuAn/CueTap?cacheSeconds=600"></a>
 </p>
 
 <p align="center">
