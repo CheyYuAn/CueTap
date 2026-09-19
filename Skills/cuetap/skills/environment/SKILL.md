@@ -18,7 +18,7 @@ When source exists but the executable does not, use [build-local.sh](../../scrip
 /absolute/path/to/cuetap-skill/scripts/build-local.sh /absolute/path/to/CueTap
 ```
 
-The helper builds the existing Xcode project, refuses to rebuild while cuetap runs, and prints the executable path. It does not install to PATH. If rebuilding is intended, use the [runtime scene](../runtime/SKILL.md) to quit first. Keep the bundled `html-demo.json` beside the executable for first startup. The menu icon uses the system SF Symbol `pointer.arrow.ipad.rays`; no external icon assets are needed.
+The helper builds the existing Xcode project, refuses to rebuild while cuetap runs, and prints the executable path. It does not install to PATH. If rebuilding is intended, use the [runtime scene](../runtime/SKILL.md) to quit first. The example is compiled into the binary, so a first startup works even when no `html-demo.json` sits beside the executable; the file is still copied there for reference. The menu icon uses the system SF Symbol `pointer.arrow.ipad.rays`; no external icon assets are needed.
 If source or Xcode is unavailable, explain the missing dependency instead of fabricating an installation.
 
 ## Compatibility and distribution
@@ -30,6 +30,6 @@ cuetap version --json
 cuetap help
 ```
 
-Older versions may lack descriptions or configuration management. Public GitHub and Homebrew distribution is planned but not published. Do not invent a repository, tap, formula, or installation command.
+Older versions may lack descriptions or configuration management. CueTap is published at https://github.com/CheyYuAn/CueTap and installs with `brew install CheyYuAn/cuetap/cuetap`, which puts the executable at `/opt/homebrew/bin/cuetap` on Apple Silicon or `/usr/local/bin/cuetap` on Intel. Do not invent any other repository, tap, formula, or installation command.
 
 Continue the requested scene with the located executable and known version. Finding the executable alone does not start a resident or prove runtime permissions.
