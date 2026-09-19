@@ -23,7 +23,7 @@ struct SystemInputSourceAccess: InputSourceAccess {
     func currentID() throws -> String {
         guard let source = TISCopyCurrentKeyboardInputSource()?.takeRetainedValue(),
               let id = identifier(source) else {
-            throw SessionError.unavailable("无法读取当前输入源，未开启演示。")
+            throw SessionError.unavailable("Cannot read the current input source. Demo was not enabled.")
         }
         return id
     }
@@ -34,13 +34,13 @@ struct SystemInputSourceAccess: InputSourceAccess {
         for id in ["com.apple.keylayout.ABC", "com.apple.keylayout.US"] {
             if enabledSource(id) != nil { return id }
         }
-        throw SessionError.unavailable("未找到已启用的 ABC 或 U.S. 输入源。请先在系统设置中添加，再开启演示。")
+        throw SessionError.unavailable("No enabled ABC or U.S. input source. Add one in System Settings before enabling a demo.")
     }
 
     func select(_ identifier: String) throws {
         guard let source = enabledSource(identifier), TISSelectInputSource(source) == noErr,
               try currentID() == identifier else {
-            throw SessionError.unavailable("无法切换输入源：\(identifier)。")
+            throw SessionError.unavailable("Cannot select input source: \(identifier).")
         }
     }
 }
@@ -69,7 +69,7 @@ final class DemoInputSource {
             if try access.currentID() != originalID { try access.select(originalID) }
         } catch {
             // Keep the snapshot so shutdown cleanup can retry instead of losing it.
-            throw SessionError.unavailable("恢复原输入源失败（\(originalID)）：\(error)")
+            throw SessionError.unavailable("Could not restore input source (\(originalID)): \(error)")
         }
         self.originalID = nil
         forcedID = nil

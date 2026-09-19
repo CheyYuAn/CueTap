@@ -13,6 +13,9 @@ final class ConfigurationCLITests: XCTestCase {
         let process = Process()
         process.executableURL = Bundle(for: Self.self).bundleURL.deletingLastPathComponent().appendingPathComponent("cuetap")
         process.currentDirectoryURL = folder
+        var environment = ProcessInfo.processInfo.environment
+        environment["CUETAP_HOME"] = folder.appendingPathComponent("profile").path
+        process.environment = environment
         process.arguments = arguments
         let pipe = Pipe()
         process.standardOutput = pipe
@@ -26,7 +29,8 @@ final class ConfigurationCLITests: XCTestCase {
     func testDefaultExampleCanValidateFromUnrelatedDirectory() throws {
         let result = try run(["--validate"])
         XCTAssertEqual(result.0, 0)
-        XCTAssertTrue(result.1.contains("38 个动作"))
+        XCTAssertTrue(result.1.contains("115 actions"))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: folder.appendingPathComponent("profile").path))
     }
     func testCustomFileWithSpacesAndRelativePathIsLoaded() throws {
         let file = folder.appendingPathComponent("custom script.json")
@@ -34,7 +38,7 @@ final class ConfigurationCLITests: XCTestCase {
         for path in [file.path, "custom script.json"] {
             let result = try run(["--script", path, "--validate"])
             XCTAssertEqual(result.0, 0)
-            XCTAssertTrue(result.1.contains("Custom，5 个动作"))
+            XCTAssertTrue(result.1.contains("Custom, 5 actions"))
         }
     }
     func testMissingAndInvalidFilesFailBeforeStartingInterception() throws {

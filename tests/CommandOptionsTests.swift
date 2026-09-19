@@ -3,6 +3,21 @@ import XCTest
 
 final class CommandOptionsTests: XCTestCase {
     private let executable = URL(fileURLWithPath: "/example/build/cuetap")
+    func testConfigurationCommandsAndDoctorParse() throws {
+        for args in [["list"], ["use", "demo"], ["rename", "demo", "New Name"], ["export", "demo", "output file.json"], ["remove", "demo"]] {
+            let options = try CommandOptions(arguments: ["config"] + args + ["--json"], executableURL: executable)
+            XCTAssertEqual(options.mode, .config)
+            XCTAssertEqual(options.configuration?.operation.rawValue, args[0])
+        }
+        let export = try CommandOptions(arguments: ["config", "export", "demo", "~/demo.json"], executableURL: executable)
+        XCTAssertEqual(export.configuration?.value, NSHomeDirectory() + "/demo.json")
+        XCTAssertEqual(try CommandOptions(arguments: ["doctor", "--json"], executableURL: executable).mode, .doctor)
+    }
+    func testInvalidConfigurationCommandArgumentsFail() {
+        for args in [["config"], ["config", "delete", "x"], ["config", "list", "x"], ["config", "use"], ["config", "rename", "a", " "], ["config", "export", "a"], ["doctor", "--script", "x"]] {
+            XCTAssertThrowsError(try CommandOptions(arguments: args, executableURL: executable))
+        }
+    }
     func testDefaultIsBesideExecutableNotWorkingDirectory() throws {
         let options = try CommandOptions(arguments: [], executableURL: executable)
         XCTAssertEqual(options.mode, .run)
@@ -21,6 +36,26 @@ final class CommandOptionsTests: XCTestCase {
     }
     func testInvalidArgumentsFail() {
         for args in [["--script"], ["--script", ""], ["--script", "--validate"], ["--script", "a", "--script", "b"], ["--help", "--check"], ["--validate", "--validate"], ["--check", "--script", "a"], ["file.json"], ["--unknown"]] {
+            XCTAssertThrowsError(try CommandOptions(arguments: args, executableURL: executable))
+        }
+    }
+}
+
+extension CommandOptionsTests {
+    func testAgentCommandsParseWithJSONInEitherPosition() throws {
+        for args in [["--json", "status"], ["status", "--json"]] {
+            let value = try CommandOptions(arguments: args, executableURL: executable)
+            XCTAssertEqual(value.mode, .status)
+            XCTAssertTrue(value.json)
+        }
+        let load = try CommandOptions(arguments: ["load", "/a b/demo.json", "--json"], executableURL: executable)
+        XCTAssertEqual(load.scriptURL.path, "/a b/demo.json")
+        XCTAssertEqual(load.mode, .load)
+        let hotkey = try CommandOptions(arguments: ["hotkey", "set", "ctrl+alt+k"], executableURL: executable)
+        XCTAssertEqual(hotkey.hotkey, "ctrl+option+k")
+    }
+    func testUnexpectedAgentArgumentsAreRejected() {
+        for args in [["status", "extra"], ["load"], ["reload", "--script", "a"], ["hotkey"], ["hotkey", "get", "extra"], ["start", "--json", "--json"], ["serve", "--json"]] {
             XCTAssertThrowsError(try CommandOptions(arguments: args, executableURL: executable))
         }
     }

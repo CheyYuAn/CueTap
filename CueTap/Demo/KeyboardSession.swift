@@ -22,26 +22,51 @@ final class KeyboardSession {
     private var observer: NSObjectProtocol?
     private var watchdog: Timer?
     private var signalSources: [DispatchSourceSignal] = []
+    private var advanceGesture = SegmentAdvanceGesture()
+    private var leftButtonDown = false
+    private var normalizeLeftRelease = false
     private var physicalFlags: CGEventFlags = []
     private(set) var failure: String?
+    var onChange: (() -> Void)?
+    var onStop: (() -> Void)?
+    var state: DemoController.State { controller.state }
+    var position: Int { controller.position }
+    var canReconfigure: Bool { controller.canReconfigure && !leftButtonDown && Self.modifiers(physicalFlags).isEmpty }
+    var segmentIndex: Int { controller.segmentIndex }
+    var segmentPosition: Int { controller.segmentPosition }
+    var segmentActionCount: Int { controller.segmentActionCount }
+    var segmentName: String { controller.segmentName }
 
-    init(actions: [DemoAction], inputSource: DemoInputSource = DemoInputSource()) {
+    init(actions: [DemoAction], hotkey: DemoHotkey = .default, inputSource: DemoInputSource = DemoInputSource()) {
         self.inputSource = inputSource
-        controller = DemoController(actions: actions)
+        controller = DemoController(actions: actions, hotkey: hotkey)
+    }
+
+    init(segments: [DemoSegment], hotkey: DemoHotkey = .default,
+         advanceShortcut: SegmentAdvanceShortcut = .default, inputSource: DemoInputSource = DemoInputSource()) {
+        self.inputSource = inputSource
+        controller = DemoController(segments: segments, hotkey: hotkey)
+        advanceGesture.shortcut = advanceShortcut
     }
 
     static func checkPermissions() throws {
         guard CGPreflightListenEventAccess(), CGPreflightPostEventAccess() else {
-            throw SessionError.unavailable("缺少输入监听或辅助功能权限。请在系统设置 → 隐私与安全性中为启动终端或 cuetap 授权，然后重新启动。程序不会自行修改权限。")
+            throw SessionError.unavailable("Input Monitoring or Accessibility permission is missing. Authorize your terminal or cuetap in System Settings > Privacy & Security, then restart.")
         }
         guard !IsSecureEventInputEnabled() else {
-            throw SessionError.unavailable("当前启用了安全输入，无法监听键盘。请结束安全输入后重新启动。")
+            throw SessionError.unavailable("Secure Input is enabled. Disable the secure input session before restarting.")
         }
     }
 
     func run() throws {
+        try start()
+        defer { cleanUp() }
+        CFRunLoopRun()
+    }
+
+    func start() throws {
         try Self.checkPermissions()
-        let mask = [CGEventType.keyDown, .keyUp, .flagsChanged]
+        let mask = [CGEventType.keyDown, .keyUp, .flagsChanged, .leftMouseDown, .leftMouseUp, .leftMouseDragged]
             .reduce(CGEventMask(0)) { $0 | (CGEventMask(1) << $1.rawValue) }
         let callback: CGEventTapCallBack = { proxy, type, event, context in
             guard let context else { return Unmanaged.passUnretained(event) }
@@ -52,12 +77,12 @@ final class KeyboardSession {
                                          options: .defaultTap, eventsOfInterest: mask,
                                          callback: callback,
                                          userInfo: Unmanaged.passUnretained(self).toOpaque()) else {
-            throw SessionError.unavailable("无法建立键盘拦截。请检查辅助功能与输入监听权限后重新启动。")
+            throw SessionError.unavailable("Cannot install the keyboard event tap. Check Accessibility and Input Monitoring permissions.")
         }
         self.tap = tap
         guard let loopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0) else {
             CFMachPortInvalidate(tap)
-            throw SessionError.unavailable("无法建立键盘事件循环。")
+            throw SessionError.unavailable("Cannot create the keyboard run-loop source.")
         }
         runLoopSource = loopSource
         physicalFlags = CGEventSource.flagsState(.hidSystemState)
@@ -71,13 +96,13 @@ final class KeyboardSession {
         watchdog = Timer(timeInterval: 0.25, repeats: true) { [weak self] _ in
             guard let self, let tap = self.tap else { return }
             if !CGEvent.tapIsEnabled(tap: tap) || IsSecureEventInputEnabled() {
-                self.stop(reason: "键盘监听已失效，CueTap 已退出。请检查权限或安全输入状态后重新启动。")
+                self.stop(reason: "Keyboard monitoring stopped. CueTap has exited. Check permissions and Secure Input before restarting.")
                 return
             }
             self.checkFrontmostApplication()
             guard self.failure == nil else { return }
             do { try self.inputSource.synchronize(active: self.controller.state != .off) }
-            catch { self.stop(reason: "输入源控制失败，CueTap 已退出：\(error)") }
+            catch { self.stop(reason: "Input-source control failed. CueTap has stopped: \(error)") }
         }
         RunLoop.main.add(watchdog!, forMode: .common)
         for number in [SIGINT, SIGTERM, SIGHUP] {
@@ -87,18 +112,40 @@ final class KeyboardSession {
             signalSource.resume()
             signalSources.append(signalSource)
         }
-        defer { cleanUp() }
-        CFRunLoopRun()
+    }
+
+    func configure(actions: [DemoAction], hotkey: DemoHotkey) throws {
+        try controller.configure(actions: actions, hotkey: hotkey)
+        onChange?()
+    }
+
+    func configure(segments: [DemoSegment], hotkey: DemoHotkey, advanceShortcut: SegmentAdvanceShortcut) throws {
+        guard canReconfigure else { throw ControlError("busy", "Stop the demo and release all keys and mouse buttons.") }
+        try controller.configure(segments: segments, hotkey: hotkey)
+        advanceGesture = SegmentAdvanceGesture(shortcut: advanceShortcut)
+        onChange?()
+    }
+
+    func stopDemo() throws {
+        controller.cancel()
+        advanceGesture.reset()
+        output.synchronizeModifiers(CGEventSource.flagsState(.hidSystemState), proxy: nil)
+        do { try inputSource.restore() }
+        catch { stop(reason: String(describing: error)); throw error }
+        onChange?()
     }
 
     func receive(proxy: CGEventTapProxy?, type: CGEventType, event: CGEvent)
         -> Unmanaged<CGEvent>? {
         if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
-            stop(reason: "系统停用了键盘监听，CueTap 已退出，不会自动继续演示。")
+            stop(reason: "The system disabled the keyboard tap. CueTap has stopped and will not resume automatically.")
             return Unmanaged.passUnretained(event)
         }
         if event.getIntegerValueField(.eventSourceUserData) == Self.eventMarker {
             return Unmanaged.passUnretained(event)
+        }
+        if [.leftMouseDown, .leftMouseUp, .leftMouseDragged].contains(type) {
+            return receivePointer(proxy: proxy, type: type, event: event)
         }
         let kind: KeyboardInput.Kind
         switch type {
@@ -107,6 +154,9 @@ final class KeyboardSession {
         case .flagsChanged: kind = .modifiers
         default: return Unmanaged.passUnretained(event)
         }
+        let previousState = controller.state
+        let previousReconfigure = canReconfigure
+        defer { if previousState != controller.state || previousReconfigure != canReconfigure { onChange?() } }
         physicalFlags = event.flags
         checkFrontmostApplication(proxy: proxy)
         guard failure == nil else { return Unmanaged.passUnretained(event) }
@@ -118,24 +168,57 @@ final class KeyboardSession {
         if result.neutralizeModifiers { output.synchronizeModifiers([], proxy: proxy) }
         do { try inputSource.synchronize(active: controller.state != .off) }
         catch {
-            stop(reason: "输入源控制失败，CueTap 已退出：\(error)")
+            stop(reason: "Input-source control failed. CueTap has stopped: \(error)")
             return result.suppress ? nil : Unmanaged.passUnretained(event)
         }
         if let action = result.action {
             do { try output.emit(action, proxy: proxy) }
-            catch { stop(reason: "模拟按键失败，CueTap 已退出。") }
+            catch { stop(reason: "Failed to send a keyboard event. CueTap has exited.") }
         }
         if !result.suppress { output.notePassedFlags(event.flags) }
         return result.suppress ? nil : Unmanaged.passUnretained(event)
     }
 
+    private func receivePointer(proxy: CGEventTapProxy?, type: CGEventType, event: CGEvent) -> Unmanaged<CGEvent>? {
+        let previousReconfigure = canReconfigure
+        defer { if previousReconfigure != canReconfigure { onChange?() } }
+        physicalFlags = event.flags
+        checkFrontmostApplication(proxy: proxy)
+        let kind: SegmentAdvanceGesture.Event = type == .leftMouseDown ? .down : type == .leftMouseUp ? .up : .dragged
+        if type == .leftMouseDown { leftButtonDown = true }
+        if type == .leftMouseUp { leftButtonDown = false }
+        let active = controller.state != .off
+        if type == .leftMouseDown { normalizeLeftRelease = active }
+        let shouldNormalize = active || normalizeLeftRelease
+        let advance = advanceGesture.handle(kind, waiting: controller.state == .waiting,
+                                            modifiers: Self.modifiers(physicalFlags),
+                                            clickCount: Int(event.getIntegerValueField(.mouseEventClickState)))
+        if shouldNormalize {
+            // The editor must receive an ordinary positioning click, not Cmd-click navigation.
+            output.synchronizeModifiers([], proxy: proxy)
+            event.flags = []
+        }
+        if type == .leftMouseUp {
+            normalizeLeftRelease = false
+            if advance {
+                controller.advanceSegment(frontmostPID: NSWorkspace.shared.frontmostApplication?.processIdentifier,
+                                          modifiers: Self.modifiers(physicalFlags))
+                onChange?()
+            }
+            if !active { output.synchronizeModifiers(physicalFlags, proxy: proxy) }
+        }
+        return Unmanaged.passUnretained(event)
+    }
+
     private func checkFrontmostApplication(proxy: CGEventTapProxy? = nil) {
-        guard let target = controller.targetPID,
-              NSWorkspace.shared.frontmostApplication?.processIdentifier != target else { return }
-        controller.cancel()
+        let previous = controller.state
+        controller.frontmostChanged(NSWorkspace.shared.frontmostApplication?.processIdentifier)
+        guard previous != .off, controller.state == .off else { return }
+        advanceGesture.reset()
         output.synchronizeModifiers(physicalFlags, proxy: proxy)
         do { try inputSource.restore() }
         catch { stop(reason: "\(error)") }
+        onChange?()
     }
 
     private static func modifiers(_ flags: CGEventFlags) -> KeyModifiers {
@@ -148,14 +231,16 @@ final class KeyboardSession {
         return result
     }
 
-    private func stop(reason: String? = nil) {
+    func stop(reason: String? = nil) {
         if let reason { failure = reason }
         controller.cancel()
         do { try inputSource.restore() }
         catch { failure = [failure, String(describing: error)].compactMap { $0 }.joined(separator: "\n") }
         output.synchronizeModifiers(CGEventSource.flagsState(.hidSystemState), proxy: nil)
         if let tap { CGEvent.tapEnable(tap: tap, enable: false) }
-        CFRunLoopStop(CFRunLoopGetMain())
+        cleanUp()
+        onChange?()
+        if let onStop { onStop() } else { CFRunLoopStop(CFRunLoopGetMain()) }
     }
 
     private func cleanUp() {
@@ -166,5 +251,10 @@ final class KeyboardSession {
         signalSources.forEach { $0.cancel() }
         if let tap { CFMachPortInvalidate(tap) }
         if let runLoopSource { CFRunLoopRemoveSource(CFRunLoopGetMain(), runLoopSource, .commonModes) }
+        tap = nil
+        runLoopSource = nil
+        observer = nil
+        watchdog = nil
+        signalSources.removeAll()
     }
 }

@@ -1,12 +1,100 @@
 {
-  "version": 1,
-  "name": "HTML 演示",
-  "actions": [
-    { "type": "text", "value": "<div></div>" },
-    { "type": "key", "key": "left", "count": 7 },
-    { "type": "text", "value": " class:\"body\"" },
-    { "type": "key", "key": "right" },
-    { "type": "key", "key": "enter" },
-    { "type": "text", "value": "hello" }
+  "version": 2,
+  "name": "HTML Demo",
+  "description": "Three independent HTML insertions: hello, world, and cuetap. Use the advance click between positions or files.",
+  "segments": [
+    {
+      "name": "Segment 1: hello",
+      "description": "The original HTML insertion sequence, ending with hello. Position the cursor manually.",
+      "actions": [
+        {
+          "type": "text",
+          "value": "<div></div>"
+        },
+        {
+          "type": "key",
+          "key": "left",
+          "count": 7
+        },
+        {
+          "type": "text",
+          "value": " class:\"body\""
+        },
+        {
+          "type": "key",
+          "key": "right"
+        },
+        {
+          "type": "key",
+          "key": "enter"
+        },
+        {
+          "type": "text",
+          "value": "hello"
+        }
+      ]
+    },
+    {
+      "name": "Segment 2: world",
+      "description": "The original HTML insertion sequence, ending with world. Position the cursor manually.",
+      "actions": [
+        {
+          "type": "text",
+          "value": "<div></div>"
+        },
+        {
+          "type": "key",
+          "key": "left",
+          "count": 7
+        },
+        {
+          "type": "text",
+          "value": " class:\"body\""
+        },
+        {
+          "type": "key",
+          "key": "right"
+        },
+        {
+          "type": "key",
+          "key": "enter"
+        },
+        {
+          "type": "text",
+          "value": "world"
+        }
+      ]
+    },
+    {
+      "name": "Segment 3: cuetap",
+      "description": "The original HTML insertion sequence, ending with cuetap. Position the cursor manually.",
+      "actions": [
+        {
+          "type": "text",
+          "value": "<div></div>"
+        },
+        {
+          "type": "key",
+          "key": "left",
+          "count": 7
+        },
+        {
+          "type": "text",
+          "value": " class:\"body\""
+        },
+        {
+          "type": "key",
+          "key": "right"
+        },
+        {
+          "type": "key",
+          "key": "enter"
+        },
+        {
+          "type": "text",
+          "value": "cuetap"
+        }
+      ]
+    }
   ]
 }

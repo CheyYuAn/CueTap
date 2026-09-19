@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "name": "HTML Demo",
+  "description": "Single-position HTML demo: type a div pair, insert a class attribute, then enter hello between the tags.",
+  "actions": [
+    { "type": "text", "value": "<div></div>" },
+    { "type": "key", "key": "left", "count": 7 },
+    { "type": "text", "value": " class:\"body\"" },
+    { "type": "key", "key": "right" },
+    { "type": "key", "key": "enter" },
+    { "type": "text", "value": "hello" }
+  ]
+}

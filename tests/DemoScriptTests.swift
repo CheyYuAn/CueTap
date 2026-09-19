@@ -2,6 +2,19 @@ import Foundation
 import XCTest
 
 final class DemoScriptTests: XCTestCase {
+    func testDescriptionSupportsUserLanguageAndLegacyFiles() throws {
+        let data = Data(#"{"version":1,"name":"demo","description":"某微信小程序的登录表单代码","actions":[{"type":"text","value":"A"}]}"#.utf8)
+        let script = try DemoScript.decode(data)
+        XCTAssertEqual(script.description, "某微信小程序的登录表单代码")
+        XCTAssertEqual(script.actions, [.character("A")])
+        XCTAssertEqual(try decode(#"[{"type":"text","value":"A"}]"#).description, "")
+    }
+    func testDescriptionRejectsNonStringsAndNull() {
+        for value in ["null", "7", "true", "[]", "{}"] {
+            let json = "{\"version\":1,\"name\":\"demo\",\"description\":\(value),\"actions\":[{\"type\":\"text\",\"value\":\"A\"}]}"
+            XCTAssertThrowsError(try DemoScript.decode(Data(json.utf8)))
+        }
+    }
     private func decode(_ entries: String) throws -> DemoScript {
         try DemoScript.decode(Data("{\"version\":1,\"name\":\"test\",\"actions\":\(entries)}".utf8))
     }
