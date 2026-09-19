@@ -1,7 +1,7 @@
 <h1 align="center">CueTap</h1>
 
 <p align="center">
-  Type prepared code during a live demo, one keystroke at a time.
+  Typing you prepared in advance, replayed one keystroke at a time.
 </p>
 
 <p align="center">
@@ -26,7 +26,9 @@
   <img src="assets/menu.webp" width="302" alt="The CueTap menu bar item, showing demo state, the advance shortcut, and the configuration list expanding in place">
 </p>
 
-CueTap is a live coding assistant for talks, screencasts and teaching. You prepare the code beforehand; on stage you type at whatever rhythm your explanation takes, and CueTap emits the prepared characters instead of yours. The typing looks real because it is real, but typos cannot happen.
+CueTap replays typing you prepared in advance, for live demos, talks, screencasts and teaching. Code, prose, commands, form fields, anything you can type.
+
+You type at whatever rhythm your explanation takes and CueTap emits the prepared characters instead of yours. The typing looks real because it is real, but typos cannot happen.
 
 It is one macOS command line tool with a menu bar icon. No window, no Dock icon, no recording, no network access.
 
@@ -69,9 +71,9 @@ After an upgrade CueTap may start but ignore the hotkey. Ad-hoc signatures chang
 cuetap start
 ```
 
-The icon appears in the menu bar and the bundled example loads. Open `tests/test.html` in an editor, put the cursor where the code belongs, press Command-Shift-R, and type anything.
+The icon appears in the menu bar and the bundled example loads. Open `tests/test.html` in an editor, put the cursor where the text belongs, press Command-Shift-R, and type anything.
 
-One configuration can hold several segments, for code that belongs in different places. At the end of a segment CueTap keeps swallowing keystrokes while you navigate with the mouse, across files and applications. Command-click where the next segment starts and typing resumes there. After the last segment the keyboard stays locked for three seconds, absorbing keys pressed a beat too late, then the demo stops itself.
+One configuration can hold several segments, for text that belongs in different places. At the end of a segment CueTap keeps swallowing keystrokes while you navigate with the mouse, across files and applications. Command-click where the next segment starts and typing resumes there. After the last segment the keyboard stays locked for three seconds, absorbing keys pressed a beat too late, then the demo stops itself.
 
 `cuetap stop` ends a demo, `cuetap quit` shuts the process down.
 
@@ -110,7 +112,7 @@ Process control is `start`, `stop`, `quit`, `status`. Configurations are `config
 
 ## With an AI agent
 
-[`Skills/cuetap/`](Skills/cuetap) is an Agent Skill. Hand a coding agent the code you plan to demo and it writes, imports and selects the configuration for you. Starting the demo stays with you, at the keyboard, in front of the audience.
+[`Skills/cuetap/`](Skills/cuetap) is an Agent Skill. Hand a coding agent whatever you plan to type and it writes, imports and selects the configuration for you. Starting the demo stays with you, at the keyboard, in front of the audience.
 
 ## Privacy
 
