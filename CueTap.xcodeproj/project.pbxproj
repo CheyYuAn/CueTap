@@ -38,7 +38,7 @@
 		};
         300000000000000000000001 /* Exclude manual test files */ = {
             isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-            membershipExceptions = ("run-tests.sh", "test.html", "html-demo.json",);
+            membershipExceptions = ("run-tests.sh", "test.html", "html-demo.json", "single-segment-demo.json", "multisegment-acceptance.md",);
             target = 100000000000000000000003 /* CueTapTests */;
         };
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -214,7 +214,7 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				CONFIGURATION_BUILD_DIR = "$(PROJECT_DIR)/build/$(CONFIGURATION)";
+				CONFIGURATION_BUILD_DIR = "$(PROJECT_DIR)/build/products/$(CONFIGURATION)";
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
@@ -285,7 +285,7 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				CONFIGURATION_BUILD_DIR = "$(PROJECT_DIR)/build/$(CONFIGURATION)";
+				CONFIGURATION_BUILD_DIR = "$(PROJECT_DIR)/build/products/$(CONFIGURATION)";
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
@@ -319,6 +319,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Manual;
 				MACOSX_DEPLOYMENT_TARGET = 26.3;
 				PRODUCT_MODULE_NAME = CueTap;
@@ -335,6 +336,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Manual;
 				MACOSX_DEPLOYMENT_TARGET = 26.3;
 				PRODUCT_MODULE_NAME = CueTap;
