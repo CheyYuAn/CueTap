@@ -26,111 +26,63 @@
   <img src="assets/menu.webp" width="302" alt="The CueTap menu bar item, showing demo state, the advance shortcut, and the configuration list expanding in place">
 </p>
 
-CueTap types prepared code for you during a live demo, one keystroke at a time.
+CueTap is a live coding assistant for talks, screencasts and teaching. You prepare the code beforehand; on stage you type at whatever rhythm your explanation takes, and CueTap emits the prepared characters instead of yours. The typing looks real because it is real, but typos cannot happen.
 
-You press a key, it emits the next action from a configuration file. Press again, it emits the one after that. Whatever you actually type is discarded, so the code that lands on screen is exactly what you prepared, at whatever pace your talking happens to take.
-
-It is a single macOS command line tool with a menu bar icon. No window, no Dock icon, no recording, no network access.
-
-## Why
-
-Typing code live in front of an audience goes wrong in predictable ways. You make typos while explaining something, you lose your place, or you type perfectly and it looks suspiciously rehearsed. Pasting the whole block skips the part people came to see.
-
-CueTap keeps the performance of typing without the risk. You improvise the talking; the characters are already decided.
-
-## What it looks like in use
-
-Prepare a configuration, open your editor, put the cursor where the code should go, press the toggle hotkey. Then type anything, with any rhythm you like. Each key you press advances the demo by one action.
-
-A configuration can hold several segments, for code that belongs in different places. When a segment ends, CueTap waits and keeps swallowing your keystrokes, so you can navigate to the next spot with the mouse, across files, windows and applications. Command-click where the next segment should start and typing resumes there.
-
-After the last segment, the keyboard stays locked for three seconds to absorb any keys you pressed a beat too late, then the demo shuts itself off.
-
-## Requirements
-
-macOS 26.3 or later, Apple Silicon or Intel.
-
-CueTap intercepts and emits keyboard events, so macOS requires you to grant two permissions by hand in System Settings, under Privacy & Security:
-
-- Accessibility
-- Input Monitoring
-
-Grant them to whatever runs CueTap. If you launch it from Terminal, grant them to Terminal.
-
-CueTap also forces the ABC/U.S. input source while a demo runs, and restores your previous one when it stops. This keeps an IME from rewriting what gets typed.
+It is one macOS command line tool with a menu bar icon. No window, no Dock icon, no recording, no network access.
 
 ## Install
 
-### Homebrew
-
-```
+```sh
 brew install CheyYuAn/cuetap/cuetap
 ```
 
-### Manual
+Or grab the archive from [Releases](https://github.com/CheyYuAn/CueTap/releases), then:
 
-Download the archive from the Releases page, then:
-
-```
+```sh
 xattr -d com.apple.quarantine cuetap
 sudo mv cuetap html-demo.json /usr/local/bin/
 ```
 
-The `xattr` line removes the quarantine flag macOS puts on anything a browser downloaded. Without it you get "Apple cannot check it for malicious software" and no way to proceed. Homebrew downloads do not carry that flag, which is why the Homebrew path skips this step.
+The `xattr` line clears the quarantine flag macOS puts on browser downloads. Homebrew downloads never carry it.
 
-### From source
+From source, with Xcode 27 or later:
 
-Requires Xcode 27 or later.
-
-```
+```sh
 git clone https://github.com/CheyYuAn/CueTap.git
-cd CueTap
-Skills/cuetap/scripts/build-local.sh "$PWD"
+cd CueTap && Skills/cuetap/scripts/build-local.sh "$PWD"
 ```
 
-The executable lands in `build/products/Release/cuetap`.
+## Permissions
 
-## A note on upgrades
+CueTap intercepts and emits keyboard events, so macOS requires two grants in System Settings under Privacy & Security. Give them to whatever launches CueTap, Terminal included.
 
-CueTap ships with an ad-hoc signature rather than a paid Apple Developer certificate. macOS identifies a program by its signature when deciding whether it still holds the permissions you granted, and an ad-hoc signature changes with every build.
+- Accessibility
+- Input Monitoring
 
-In practice this means that after upgrading, CueTap may start but do nothing when you press the hotkey. Go back to System Settings and re-enable it under Accessibility and Input Monitoring. Run `cuetap doctor` if you want to confirm that is what happened.
+While a demo runs, CueTap forces the ABC/U.S. input source so an IME cannot rewrite what gets typed, and restores your own when it stops.
 
-## Quick start
+After an upgrade CueTap may start but ignore the hotkey. Ad-hoc signatures change with every build and macOS treats the new one as a different program, so grant both permissions again. `cuetap doctor` confirms it.
 
-```
+## Usage
+
+```sh
 cuetap start
 ```
 
-This starts the resident process, puts the icon in the menu bar, and loads the bundled example. Then open `tests/test.html` in an editor, put the cursor inside the first input area, press Command-Shift-R, and type.
+The icon appears in the menu bar and the bundled example loads. Open `tests/test.html` in an editor, put the cursor where the code belongs, press Command-Shift-R, and type anything.
 
-To check what is loaded:
+One configuration can hold several segments, for code that belongs in different places. At the end of a segment CueTap keeps swallowing keystrokes while you navigate with the mouse, across files and applications. Command-click where the next segment starts and typing resumes there. After the last segment the keyboard stays locked for three seconds, absorbing keys pressed a beat too late, then the demo stops itself.
 
-```
-cuetap status --json
-```
-
-To stop the current demo but keep the process running:
-
-```
-cuetap stop
-```
-
-To shut down completely:
-
-```
-cuetap quit
-```
+`cuetap stop` ends a demo, `cuetap quit` shuts the process down.
 
 ## Configurations
 
-A configuration is a JSON file listing the actions to emit. Actions are either literal text or a named key, optionally repeated.
+A configuration lists the actions to emit, as literal text or a named key with an optional repeat count.
 
 ```json
 {
   "version": 2,
   "name": "My Demo",
-  "description": "What this configuration is for.",
   "segments": [
     {
       "name": "Segment 1",
@@ -144,36 +96,26 @@ A configuration is a JSON file listing the actions to emit. Actions are either l
 }
 ```
 
-Drop a file into `~/Library/Application Support/CueTap/configurations/` and it shows up in the menu and in `cuetap config list`. You can also import one from anywhere:
+Drop a file into `~/Library/Application Support/CueTap/configurations/` and it appears in the menu, or import one from anywhere with `cuetap load FILE`. Imported files are copied, never modified.
 
-```
-cuetap load /path/to/demo.json
-```
+CueTap emits exactly what the configuration says. It does not read your document, predict the cursor or fix indentation, so your editor's auto-indent and bracket completion still apply. Test a new configuration in the editor you will present with.
 
-CueTap copies imported files into its own directory and never modifies the original.
-
-CueTap emits exactly what the configuration says. It does not read your document, predict the cursor, or fix indentation. Your editor's auto-indent and auto-closing brackets will still do their thing, so test a new configuration in the editor you will actually present with.
-
-The full format is documented in `Skills/cuetap/references/configuration.md`.
+Full format: [configuration.md](Skills/cuetap/references/configuration.md).
 
 ## Commands
 
-Run `cuetap --help` for the complete list. Every command accepts `--json`.
+`cuetap --help` lists everything, and every command takes `--json`.
 
-Process control is `start`, `stop`, `quit` and `status`. Configuration management is `config list`, `config use`, `config rename`, `config export`, `config remove`, plus `load` and `reload`. Shortcuts are `hotkey get/set` and `advance get/set`. Troubleshooting is `doctor` and `validate`.
+Process control is `start`, `stop`, `quit`, `status`. Configurations are `config list|use|rename|export|remove`, plus `load` and `reload`. Shortcuts are `hotkey` and `advance`. Diagnostics are `doctor` and `validate`. Configurations and shortcuts change only while no demo is running.
 
-Configurations and shortcuts can only be changed while no demo is running.
+## With an AI agent
 
-## Using it with an AI agent
-
-`Skills/cuetap/` is an Agent Skill. Point a coding agent at it and you can ask for a configuration in plain language: give it the code you plan to demo, and it produces, imports and selects the configuration for you.
-
-Starting the demo is always left to you, at the keyboard, in front of the audience.
+[`Skills/cuetap/`](Skills/cuetap) is an Agent Skill. Hand a coding agent the code you plan to demo and it writes, imports and selects the configuration for you. Starting the demo stays with you, at the keyboard, in front of the audience.
 
 ## Privacy
 
-CueTap makes no network connections and never logs what you type. The startup log at `~/Library/Logs/CueTap/runtime.log` records process events only.
+No network connections, and keystrokes are never logged. `~/Library/Logs/CueTap/runtime.log` records process events only.
 
 ## License
 
-MIT. See LICENSE.
+MIT
