@@ -1,6 +1,6 @@
 ---
 name: cuetap-create-configuration
-description: Prepare or edit CueTap action JSON from user-supplied code and an editing sequence, then validate and arrange an actual editor test.
+description: Prepare or edit CueTap action JSON from user-supplied text and an editing sequence, then validate and arrange an actual editor test.
 ---
 
 # Create or change an action sequence
@@ -9,9 +9,9 @@ Follow the [root Skill](../../SKILL.md) shared rules. Read the [configuration fo
 
 ## Prepare the sequence
 
-Use the supplied code and editing process. If only final code is supplied, state the assumption of sequential typing from the beginning. Ask about cursor movements only when a requested insertion order is ambiguous. Do not invent a programmer's writing process.
+Use the supplied text and editing process. The text can be anything typed by hand: source code, prose, commands, form input. If only the finished text is supplied, state the assumption of sequential typing from the beginning. Ask about cursor movements only when a requested insertion order is ambiguous. Do not invent a writing process the user did not describe.
 
-Include a useful `name` and `description` in the user's language. Describe the supplied project, page/module, and code section without inventing context. Preserve intentional syntax and explicit whitespace. Explain unsupported characters or actions rather than silently translating, dropping, or replacing code.
+Include a useful `name` and `description` in the user's language. Describe the supplied project, page or module, and the passage itself without inventing context. Preserve intentional syntax and explicit whitespace. Explain unsupported characters or actions rather than silently translating, dropping, or replacing what was supplied.
 
 For multiple insertion positions or files, create ordered version 2 segments with separate names, descriptions, and actions. The user positions each segment manually; do not encode mouse navigation or infer file coordinates.
 

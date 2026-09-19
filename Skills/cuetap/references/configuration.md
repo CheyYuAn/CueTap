@@ -47,7 +47,7 @@ A key action accepts only type, key, and optional count. Supported keys are left
 Text supports the 95 printable ASCII characters. LF or CRLF becomes one Enter action; a tab character becomes one Tab action. Non-ASCII characters, bare CR, and other control characters are unsupported in action text.
 Maximum file size is 1 MiB, with at most 100000 expanded actions across the entire configuration. Every segment must contain actions. Unknown fields, null values, and incorrect types are rejected, with segment/action paths in errors.
 
-Preserve supplied code and whitespace. The version 1 example intentionally preserves class: rather than changing it to class=. Do not guess editor indentation. The user prepares editor settings so automatic whitespace does not duplicate explicit actions.
+Preserve supplied text and whitespace. The version 1 example intentionally preserves class: rather than changing it to class=. Do not guess editor indentation. The user prepares editor settings so automatic whitespace does not duplicate explicit actions.
 Waiting between segments is a playback state, not a JSON action. The advance click is a global user setting, not part of a configuration. Timed waits, paste, loops, scripted mouse movements, arbitrary key combinations, recording, and automatic file navigation remain unsupported.
 
 For creation, validation, saving, and actual editor testing, follow [create-configuration](../skills/create-configuration/SKILL.md). Playback boundaries are described in [runtime](../skills/runtime/SKILL.md).
