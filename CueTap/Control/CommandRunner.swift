@@ -27,7 +27,8 @@ struct CommandRunner {
             }
             return ControlResponse(message: "Permission and input-source checks passed.", status: status)
         case .validate:
-            let script = try DemoScript.load(from: options.scriptURL)
+            let script = options.explicitScript ? try DemoScript.load(from: options.scriptURL)
+                                              : try DemoScript.readBundledExample(at: options.scriptURL).file.script
             return ControlResponse(message: "Valid configuration: \(script.name), \(script.actions.count) actions.", status:
                 RuntimeStatus(running: false, configurationName: script.name, configurationPath: options.scriptURL.path,
                               configurationDescription: script.description,
@@ -82,8 +83,11 @@ struct CommandRunner {
         } catch let error as ControlError where error.code == "not_running" { }
         // Validate in this process to give immediate useful errors before launching.
         let settings = try paths.read()
-        let url = options.explicitScript ? options.scriptURL : settings.configurationPath.map { URL(fileURLWithPath: $0) } ?? options.scriptURL
-        _ = try DemoScript.load(from: url)
+        let saved = settings.configurationPath.map { URL(fileURLWithPath: $0) }
+        let url = options.explicitScript ? options.scriptURL : saved ?? options.scriptURL
+        var usesBuiltIn = false
+        if options.explicitScript || saved != nil { _ = try DemoScript.load(from: url) }
+        else { usesBuiltIn = try DemoScript.readBundledExample(at: url).isBuiltIn }
         try paths.prepare()
         try paths.prepareLog()
         guard FileManager.default.createFile(atPath: paths.log.path, contents: Data(), attributes: [.posixPermissions: 0o600]) else {
@@ -93,7 +97,9 @@ struct CommandRunner {
         defer { try? log.close() }
         let process = Process()
         process.executableURL = executable
-        process.arguments = ["serve", "--script", url.path]
+        // Passing --script would make the resident demand a file that is not there; leaving it out
+        // lets the resident resolve the same bundled example and fall back to the compiled-in copy.
+        process.arguments = usesBuiltIn ? ["serve"] : ["serve", "--script", url.path]
         process.standardInput = FileHandle.nullDevice
         process.standardOutput = log
         process.standardError = log

@@ -69,10 +69,17 @@ struct Doctor {
         }
         if let settings {
             let selected = live?.configurationPath ?? settings.configurationPath
-            let url = selected.map { URL(fileURLWithPath: $0) } ?? executable.deletingLastPathComponent().appendingPathComponent("html-demo.json")
+            let url = selected.map { URL(fileURLWithPath: $0) } ?? DemoScript.bundledExampleURL(besideExecutable: executable)
             do {
-                let script = try DemoScript.load(from: url)
-                findings.append(DiagnosticFinding(id: "configuration", severity: "pass", message: "\(script.name): \(script.actions.count) actions at \(url.path)."))
+                var origin = url.path
+                let script: DemoScript
+                if let selected { script = try DemoScript.load(from: URL(fileURLWithPath: selected)) }
+                else {
+                    let example = try DemoScript.readBundledExample(at: url)
+                    script = example.file.script
+                    if example.isBuiltIn { origin = "the built-in example" }
+                }
+                findings.append(DiagnosticFinding(id: "configuration", severity: "pass", message: "\(script.name): \(script.actions.count) actions at \(origin)."))
             } catch {
                 findings.append(DiagnosticFinding(id: "configuration", severity: "error", message: String(describing: error), suggestion: selected == nil ? "Restore the bundled html-demo.json or start with --script FILE." : "Restore this file or import a valid configuration with load FILE (running) or start --script FILE (stopped)."))
             }

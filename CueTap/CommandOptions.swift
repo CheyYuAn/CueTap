@@ -70,7 +70,7 @@ struct CommandOptions {
         if let path {
             scriptURL = URL(fileURLWithPath: (path as NSString).expandingTildeInPath).standardizedFileURL
         } else {
-            scriptURL = executableURL.resolvingSymlinksInPath().deletingLastPathComponent().appendingPathComponent("html-demo.json")
+            scriptURL = DemoScript.bundledExampleURL(besideExecutable: executableURL)
         }
     }
 }

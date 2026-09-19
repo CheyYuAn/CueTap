@@ -17,8 +17,13 @@ final class ResidentRuntime {
         self.paths = paths
         self.executable = executable
         settings = try paths.read()
-        scriptURL = options.explicitScript ? options.scriptURL : settings.configurationPath.map { URL(fileURLWithPath: $0) } ?? options.scriptURL
-        initialFile = try DemoScript.readFile(from: scriptURL)
+        let saved = settings.configurationPath.map { URL(fileURLWithPath: $0) }
+        scriptURL = options.explicitScript ? options.scriptURL : saved ?? options.scriptURL
+        // Only the untouched bundled example may fall back to the compiled-in copy; a chosen file
+        // that has gone missing must still fail loudly instead of silently reverting to the example.
+        initialFile = options.explicitScript || saved != nil
+            ? try DemoScript.readFile(from: scriptURL)
+            : try DemoScript.readBundledExample(at: scriptURL).file
         script = initialFile.script
         session = KeyboardSession(segments: script.segments, hotkey: try DemoHotkey(settings.hotkey),
                                   advanceShortcut: try SegmentAdvanceShortcut(settings.advanceShortcut))
