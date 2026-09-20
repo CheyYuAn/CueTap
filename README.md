@@ -23,8 +23,8 @@
 </p>
 
 <p align="center">
-  <img src="assets/menu.webp" height="340" alt="The CueTap menu bar item, showing demo state, the advance shortcut, and the configuration list expanding in place">
-  <img src="assets/typing.webp" height="340" alt="Three prepared snippets appearing in an editor while the presenter types freely, each one landing where the cursor was placed">
+  <img src="assets/menu.webp" height="252" alt="The CueTap menu bar item, showing demo state, the advance shortcut, and the configuration list expanding in place">
+  <img src="assets/typing.webp" height="252" alt="Three prepared snippets appearing in an editor while the presenter types freely, each one landing where the cursor was placed">
 </p>
 
 CueTap replays typing you prepared in advance, for live demos, talks, screencasts and teaching. Code, prose, commands, form fields, anything you can type.
