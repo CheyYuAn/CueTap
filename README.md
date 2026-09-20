@@ -23,7 +23,8 @@
 </p>
 
 <p align="center">
-  <img src="assets/typing.webp" width="488" alt="Three prepared snippets appearing in an editor while the presenter types freely, each one landing where the cursor was placed">
+  <img src="assets/menu.webp" height="340" alt="The CueTap menu bar item, showing demo state, the advance shortcut, and the configuration list expanding in place">
+  <img src="assets/typing.webp" height="340" alt="Three prepared snippets appearing in an editor while the presenter types freely, each one landing where the cursor was placed">
 </p>
 
 CueTap replays typing you prepared in advance, for live demos, talks, screencasts and teaching. Code, prose, commands, form fields, anything you can type.
@@ -99,10 +100,6 @@ A configuration lists the actions to emit, as literal text or a named key with a
 ```
 
 Drop a file into `~/Library/Application Support/CueTap/configurations/` and it appears in the menu, or import one from anywhere with `cuetap load FILE`. Imported files are copied, never modified.
-
-<p align="center">
-  <img src="assets/menu.webp" width="302" alt="The CueTap menu bar item, showing demo state, the advance shortcut, and the configuration list expanding in place">
-</p>
 
 CueTap emits exactly what the configuration says. It does not read your document, predict the cursor or fix indentation, so your editor's auto-indent and bracket completion still apply. Test a new configuration in the editor you will present with.
 
