@@ -9,6 +9,12 @@ struct CommandRunner {
         case .help: return ControlResponse(message: Self.help)
         case .version: return ControlResponse(message: "CueTap \(ControlResponse.version), control protocol 1, configuration formats 1 and 2.")
         case .doctor: return Doctor(executable: executable, paths: paths).run()
+        case .compile:
+            guard let compile = options.compile else { throw ControlError("invalid_request", "Missing compile options.") }
+            return try CompileCommand(options: compile).run()
+        case .diff:
+            guard let paths = options.diffPaths else { throw ControlError("invalid_request", "Missing diff paths.") }
+            return try DiffCommand(expectedPath: paths.expected, actualPath: paths.actual).run()
         case .config:
             guard let command = options.configuration else { throw ControlError("invalid_request", "Missing configuration command.") }
             do {
@@ -126,6 +132,9 @@ struct CommandRunner {
     cuetap check [--json]                 Check this command host's permissions and input source
     cuetap doctor [--json]                Diagnose a problem on demand; does not modify settings
     cuetap validate [FILE] [--json]       Validate a configuration without intercepting input
+    cuetap compile --profile NAME --output FILE TARGET... [--json]
+                                          Turn target text files into a configuration for that editor
+    cuetap diff EXPECTED ACTUAL [--json]  Compare what a demo typed with the target text
     cuetap load FILE [--json]             Import a managed copy and select it while off
     cuetap reload [--json]                Reread the selected managed copy while off
     cuetap config list [--json]           List IDs, names, descriptions and the selected configuration
@@ -156,6 +165,12 @@ struct CommandRunner {
     doctor is for troubleshooting, not a required step before each demo. It never repairs or starts anything.
     Settings stay in ~/Library/Application Support/CueTap/; logs use ~/Library/Logs/CueTap/.
     validate without FILE always checks html-demo.json beside the executable.
+    compile profiles are vscode-<language id> for any language VS Code or an installed extension defines, e.g. vscode-c, vscode-html, vscode-vue;
+    --rules FILE loads any language-configuration.json. Tag languages get tag pairing; --tags/--no-tags override.
+    compile options: --name, --description, --tab-size N, --tabs, --force; each TARGET becomes one segment.
+    compile types pairs and tags as both halves plus Left, leaves indentation to the editor and fixes it with Tab or Backspace,
+    and reports VS Code user settings that would break the demo.
+    diff exits 1 with text_mismatch and the first differing line and column; a trailing newline is reported, not counted.
     Hotkeys support cmd/ctrl/option/shift and a-z or 0-9; use two modifiers including cmd or ctrl.
     System and application shortcut conflicts require manual testing.
     Focus the target editor and press your hotkey. Completion remains on until toggled off.

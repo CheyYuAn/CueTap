@@ -34,6 +34,14 @@ final class DemoScriptTests: XCTestCase {
         XCTAssertEqual(controller.state, .complete)
     }
 
+    func testBackspaceKeyExpandsAndUnknownKeysAreRejected() throws {
+        let script = try decode(#"[{"type":"text","value":"ab"},{"type":"key","key":"backspace","count":2}]"#)
+        XCTAssertEqual(script.actions, [.character("a"), .character("b"), .backspace, .backspace])
+        XCTAssertThrowsError(try decode(#"[{"type":"key","key":"delete"}]"#)) { error in
+            XCTAssertTrue("\(error)".contains("left, right, enter, tab and backspace"), "\(error)")
+        }
+    }
+
     func testNewlinesAndTabsPreserveExplicitWhitespace() throws {
         let script = try decode(#"[{"type":"text","value":"a\r\n  b\n\tc"}]"#)
         XCTAssertEqual(script.actions, [.character("a"), .enter, .character(" "), .character(" "), .character("b"), .enter, .tab, .character("c")])

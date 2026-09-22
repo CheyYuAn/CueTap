@@ -32,6 +32,7 @@ final class DemoControllerTests: XCTestCase {
             case .enter: text.insert("\n", at: cursor); cursor += 1
             case .left: cursor -= 1; leftCount += 1
             case .right: cursor += 1
+            case .backspace: if cursor > 0 { text.remove(at: cursor - 1); cursor -= 1 }
             }
         }
         XCTAssertEqual(actions.count, 38)

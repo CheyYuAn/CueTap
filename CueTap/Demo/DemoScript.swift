@@ -2,7 +2,7 @@ import Foundation
 
 enum DemoAction: Equatable {
     case character(Character)
-    case left, right, enter, tab
+    case left, right, enter, tab, backspace
 }
 
 struct ScriptError: Error, CustomStringConvertible {
@@ -128,7 +128,8 @@ struct DemoScript {
                 case "right": action = .right
                 case "enter": action = .enter
                 case "tab": action = .tab
-                default: throw ScriptError("\(location).key: supported keys are left, right, enter and tab.")
+                case "backspace": action = .backspace
+                default: throw ScriptError("\(location).key: supported keys are left, right, enter, tab and backspace.")
                 }
                 let count = entry.count ?? 1
                 guard count > 0, count <= maximumActions - total - actions.count else {

@@ -56,6 +56,8 @@ struct ControlResponse: Codable {
     var configurations: [ConfigurationInfo]?
     var outputPath: String?
     var diagnostics: DoctorReport?
+    var compile: CompileReport?
+    var comparison: TextComparison?
 
     static func failure(_ error: Error) -> Self {
         let detail = (error as? ControlError) ?? ControlError(error is ScriptError ? "invalid_script" : "operation_failed", String(describing: error))

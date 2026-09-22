@@ -80,7 +80,7 @@ One configuration can hold several segments, for text that belongs in different 
 
 ## Configurations
 
-A configuration lists the actions to emit, as literal text or a named key with an optional repeat count.
+A configuration lists the actions to emit, as literal text or a named key with an optional repeat count. The named keys are `left`, `right`, `enter`, `tab` and `backspace`.
 
 ```json
 {
@@ -101,7 +101,17 @@ A configuration lists the actions to emit, as literal text or a named key with a
 
 Drop a file into `~/Library/Application Support/CueTap/configurations/` and it appears in the menu, or import one from anywhere with `cuetap load FILE`. Imported files are copied, never modified.
 
-CueTap emits exactly what the configuration says. It does not read your document, predict the cursor or fix indentation, so your editor's auto-indent and bracket completion still apply. Test a new configuration in the editor you will present with.
+You do not have to write actions by hand. Put the text you want to type in a file and compile it for your editor:
+
+```sh
+cuetap compile --profile vscode-c --output demo.json main.c
+```
+
+The compiler types every pair as both halves and a step back inside, writes tags as an empty element and fills the attributes in afterwards, leaves indentation to the editor and presses Tab or Backspace only where the editor's own rules would land somewhere else, and steps over closing braces and tags the editor has already placed. It replays the result through a model of the editor before writing anything, and reports the VS Code settings that would break the demo. Profiles are `vscode-<language id>` for every language VS Code or an installed extension defines, from `vscode-c` and `vscode-python` to `vscode-vue` and `vscode-typescriptreact`; another editor takes `--rules FILE` with a file shaped like VS Code's language-configuration.json. After the demo, `cuetap diff main.c typed.c` reports the first character that differs.
+
+CueTap emits exactly what the configuration says. It does not read your document, predict the cursor or fix indentation.
+
+Indentation stays your editor's job and configurations count on it, so leave auto-indent on and spend a `backspace` action where a line moves back out one level. Turn off whatever types on your behalf: tag completion, bracket and quote completion, and Enter accepting a suggestion all insert characters the configuration is already sending. [editor-setup.md](Skills/cuetap/references/editor-setup.md) lists the settings. Test a new configuration in the editor you will present with.
 
 Full format: [configuration.md](Skills/cuetap/references/configuration.md).
 
@@ -109,11 +119,11 @@ Full format: [configuration.md](Skills/cuetap/references/configuration.md).
 
 `cuetap --help` lists everything, and every command takes `--json`.
 
-Process control is `start`, `stop`, `quit`, `status`. Configurations are `config list|use|rename|export|remove`, plus `load` and `reload`. Shortcuts are `hotkey` and `advance`. Diagnostics are `doctor` and `validate`. Configurations and shortcuts change only while no demo is running.
+Process control is `start`, `stop`, `quit`, `status`. Configurations are `config list|use|rename|export|remove`, plus `load` and `reload`. Building them is `compile` and checking a demo's output is `diff`. Shortcuts are `hotkey` and `advance`. Diagnostics are `doctor` and `validate`. Configurations and shortcuts change only while no demo is running.
 
 ## With an AI agent
 
-[`Skills/cuetap/`](Skills/cuetap) is an Agent Skill. Hand a coding agent whatever you plan to type and it writes, imports and selects the configuration for you. Starting the demo stays with you, at the keyboard, in front of the audience.
+[`Skills/cuetap/`](Skills/cuetap) is an Agent Skill. Hand a coding agent whatever you plan to type and it compiles, imports and selects the configuration for you. Starting the demo stays with you, at the keyboard, in front of the audience.
 
 ## Privacy
 

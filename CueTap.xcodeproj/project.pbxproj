@@ -38,7 +38,7 @@
 		};
         300000000000000000000001 /* Exclude manual test files */ = {
             isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-            membershipExceptions = ("run-tests.sh", "test.html", "html-demo.json", "single-segment-demo.json", "multisegment-acceptance.md",);
+            membershipExceptions = ("run-tests.sh", "test.html", "html-demo.json", "single-segment-demo.json", "multisegment-acceptance.md", "vscode-cpp-language-configuration.json", "vscode-python-language-configuration.json", "c-guess-number.c", "python-guess-number.py", "vscode-html-language-configuration.json", "vscode-vue-language-configuration.json", "vue-counter.vue",);
             target = 100000000000000000000003 /* CueTapTests */;
         };
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */

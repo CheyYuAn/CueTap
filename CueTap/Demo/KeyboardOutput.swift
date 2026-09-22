@@ -41,6 +41,7 @@ final class KeyboardOutput {
         case .right: (key, flags) = (124, [])
         case .enter: (key, flags) = (36, [])
         case .tab: (key, flags) = (48, [])
+        case .backspace: (key, flags) = (51, [])
         case .character(let character):
             guard let stroke = USKeyboardLayout.stroke(for: character) else {
                 throw OutputError.unsupportedCharacter

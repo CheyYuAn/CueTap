@@ -51,6 +51,7 @@ final class KeyboardSessionIntegrationTests: XCTestCase {
             case .right: return 124
             case .enter: return 36
             case .tab: return 48
+            case .backspace: return 51
             }
         }
         try exercise(scriptURL: file, expectedKeys: keys, segmentBoundaries: [38, 76])
