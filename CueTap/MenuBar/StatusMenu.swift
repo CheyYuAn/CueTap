@@ -8,6 +8,7 @@ final class StatusMenu: NSObject, NSMenuDelegate {
     /// and push every title sideways. `trailing` is measured from a probe menu at launch.
     private enum Metrics {
         static let rowHeight: CGFloat = 24
+        static let statusIconHeight: CGFloat = 18
         static let titleInset: CGFloat = 14
         static let labelHeight: CGFloat = 18
         static let disclosureSize: CGFloat = 16
@@ -140,8 +141,26 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         quitItem.target = self
         menu.addItem(quitItem)
         item.menu = menu
-        item.button?.image = image.withSymbolConfiguration(.init(pointSize: 16, weight: .regular)) ?? image
+        item.button?.image = Self.statusImage(image)
         item.button?.setAccessibilityLabel("CueTap")
+    }
+
+    /// The status bar icon is a template image drawn from the symbol, the "interface icon" the
+    /// HIG allows for a menu bar extra. Handing the symbol over with a point size baked in gets
+    /// it clipped top and bottom by the status bar button's own symbol layout, the button's
+    /// symbolConfiguration property is ignored there, and the bare symbol draws only 14 pt of
+    /// glyph while pushing the button past the 22 pt strip. Drawn into an 18 pt image the glyph
+    /// is 16 pt high, whole, and the button stays at the strip's height.
+    private static func statusImage(_ symbol: NSImage) -> NSImage {
+        let source = symbol.withSymbolConfiguration(.init(scale: .large)) ?? symbol
+        let height = Metrics.statusIconHeight
+        let width = (source.size.width / source.size.height * height).rounded()
+        let image = NSImage(size: NSSize(width: width, height: height), flipped: false) { bounds in
+            source.draw(in: bounds)
+            return true
+        }
+        image.isTemplate = true
+        return image
     }
 
     func update(active: Bool, name: String, segment: Int, count: Int, hotkey: String, advance: String, canSelect: Bool) {
