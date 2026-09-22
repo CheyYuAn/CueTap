@@ -1,21 +1,5 @@
 import Foundation
 
-struct DiagnosticFinding: Codable {
-    let id: String
-    let severity: String
-    let message: String
-    var suggestion: String?
-}
-
-struct DoctorReport: Codable {
-    let executable: String
-    let dataDirectory: String
-    let configurationDirectory: String
-    let logPath: String
-    let permissionsScope: String
-    let findings: [DiagnosticFinding]
-}
-
 /// Explicit troubleshooting only. No startup, file writes, permission requests or input-source changes.
 struct Doctor {
     let executable: URL
@@ -57,7 +41,7 @@ struct Doctor {
         findings.append(DiagnosticFinding(id: "input_monitoring", severity: access.listen ? "pass" : "error", message: "Input Monitoring (\(scope)): \(access.listen ? "available" : "unavailable").", suggestion: access.listen ? nil : "Authorize the relevant terminal or executable in System Settings > Privacy & Security > Input Monitoring."))
         findings.append(DiagnosticFinding(id: "accessibility", severity: access.post ? "pass" : "error", message: "Accessibility (\(scope)): \(access.post ? "available" : "unavailable").", suggestion: access.post ? nil : "Authorize the relevant terminal or executable in System Settings > Privacy & Security > Accessibility."))
         findings.append(DiagnosticFinding(id: "english_input_source", severity: access.englishInputSource ? "pass" : "error", message: access.englishInputSource ? "ABC or U.S. is enabled." : "No supported English input source is enabled.", suggestion: access.englishInputSource ? nil : "Add ABC or U.S. in System Settings > Keyboard > Input Sources."))
-        findings.append(DiagnosticFinding(id: "secure_input", severity: access.secureInput ? "error" : "pass", message: access.secureInput ? "Secure Input is enabled." : "Secure Input is off.", suggestion: access.secureInput ? "Finish or close the secure input session, then restart CueTap if it stopped." : nil))
+        findings.append(DiagnosticFinding(id: "secure_input", severity: access.secureInput ? "error" : "pass", message: access.secureInput ? "Secure Input is enabled." : "Secure Input is off.", suggestion: access.secureInput ? "Finish or close the secure input session (a password field or the lock screen). A demo cannot run while it is on; the resident keeps waiting." : nil))
 
         var settings: RuntimeSettings?
         do {

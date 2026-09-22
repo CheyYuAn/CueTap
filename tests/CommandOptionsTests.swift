@@ -54,6 +54,25 @@ extension CommandOptionsTests {
         let hotkey = try CommandOptions(arguments: ["hotkey", "set", "ctrl+alt+k"], executableURL: executable)
         XCTAssertEqual(hotkey.hotkey, "ctrl+option+k")
     }
+    func testDiffTakesOneOrMorePairs() throws {
+        let executable = URL(fileURLWithPath: "/tmp/cuetap")
+        let single = try CommandOptions(arguments: ["diff", "a.c", "b.c", "--json"], executableURL: executable)
+        XCTAssertEqual(single.mode, .diff)
+        XCTAssertEqual(single.diffPairs.map { $0.expected + ">" + $0.actual }, ["a.c>b.c"])
+        let double = try CommandOptions(arguments: ["diff", "a.c", "b.c", "c.py", "d.py"], executableURL: executable)
+        XCTAssertEqual(double.diffPairs.map { $0.expected + ">" + $0.actual }, ["a.c>b.c", "c.py>d.py"])
+        XCTAssertThrowsError(try CommandOptions(arguments: ["diff", "a.c"], executableURL: executable))
+        XCTAssertThrowsError(try CommandOptions(arguments: ["diff", "a.c", "b.c", "c.py"], executableURL: executable))
+        XCTAssertThrowsError(try CommandOptions(arguments: ["diff", "a.c", "--force"], executableURL: executable))
+    }
+
+    func testProfilesParsesAndRejectsArguments() throws {
+        let options = try CommandOptions(arguments: ["profiles", "--json"], executableURL: URL(fileURLWithPath: "/tmp/cuetap"))
+        XCTAssertEqual(options.mode, .profiles)
+        XCTAssertTrue(options.json)
+        XCTAssertThrowsError(try CommandOptions(arguments: ["profiles", "extra"], executableURL: URL(fileURLWithPath: "/tmp/cuetap")))
+    }
+
     func testUnexpectedAgentArgumentsAreRejected() {
         for args in [["status", "extra"], ["load"], ["reload", "--script", "a"], ["hotkey"], ["hotkey", "get", "extra"], ["start", "--json", "--json"], ["serve", "--json"]] {
             XCTAssertThrowsError(try CommandOptions(arguments: args, executableURL: executable))

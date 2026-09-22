@@ -54,9 +54,6 @@ final class KeyboardSession {
         guard CGPreflightListenEventAccess(), CGPreflightPostEventAccess() else {
             throw SessionError.unavailable("Input Monitoring or Accessibility permission is missing. Authorize your terminal or cuetap in System Settings > Privacy & Security, then restart.")
         }
-        guard !IsSecureEventInputEnabled() else {
-            throw SessionError.unavailable("Secure Input is enabled. Disable the secure input session before restarting.")
-        }
     }
 
     func run() throws {
@@ -96,9 +93,14 @@ final class KeyboardSession {
         ) { [weak self] _ in self?.checkFrontmostApplication() }
         watchdog = Timer(timeInterval: 0.25, repeats: true) { [weak self] _ in
             guard let self, let tap = self.tap else { return }
-            if !CGEvent.tapIsEnabled(tap: tap) || IsSecureEventInputEnabled() {
-                self.stop(reason: "Keyboard monitoring stopped. CueTap has exited. Check permissions and Secure Input before restarting.")
+            if !CGEvent.tapIsEnabled(tap: tap) {
+                self.stop(reason: "Keyboard monitoring stopped. CueTap has exited. Check permissions before restarting.")
                 return
+            }
+            // A password field or the lock screen turned Secure Input on: the tap no longer sees keys,
+            // so a running demo ends, while an idle resident just waits for the session to finish.
+            if IsSecureEventInputEnabled(), self.controller.state != .off {
+                try? self.stopDemo()
             }
             self.checkFrontmostApplication()
             guard self.failure == nil else { return }

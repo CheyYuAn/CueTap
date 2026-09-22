@@ -1,15 +1,18 @@
 #!/bin/zsh
 # Build, publish a GitHub release, and point the Homebrew tap at it.
 #
-#   scripts/release.sh 0.4.1
+#   scripts/release.sh 0.4.1 [NOTES.md]
 #
 # Needs gh logged in, a clean main, and the tap repository checked out next to
-# this one (override with CUETAP_TAP_DIR).
+# this one (override with CUETAP_TAP_DIR). NOTES.md becomes the release notes;
+# without it the notes point at the README.
 
 set -e
 
 VERSION="$1"
-[[ -n "$VERSION" ]] || { echo "usage: $0 VERSION (e.g. 0.4.1)" >&2; exit 2; }
+NOTES="$2"
+[[ -n "$VERSION" ]] || { echo "usage: $0 VERSION [NOTES.md]" >&2; exit 2; }
+[[ -z "$NOTES" || -f "$NOTES" ]] || { echo "notes file not found: $NOTES" >&2; exit 2; }
 
 ROOT="${0:A:h:h}"
 TAP_DIR="${CUETAP_TAP_DIR:-$ROOT/../homebrew-cuetap}"
@@ -38,8 +41,12 @@ echo "    sha256 $SHA"
 
 echo "==> Publishing release v$VERSION"
 git push origin main
-gh release create "v$VERSION" --repo "$REPO" --title "CueTap $VERSION" \
-  --notes "See the README for what CueTap does and how to install it." "$ROOT/$ARCHIVE"
+if [[ -n "$NOTES" ]]; then
+  gh release create "v$VERSION" --repo "$REPO" --title "CueTap $VERSION" --notes-file "$NOTES" "$ROOT/$ARCHIVE"
+else
+  gh release create "v$VERSION" --repo "$REPO" --title "CueTap $VERSION" \
+    --notes "See the README for what CueTap does and how to install it." "$ROOT/$ARCHIVE"
+fi
 
 echo "==> Updating the tap"
 FORMULA="$TAP_DIR/Formula/cuetap.rb"

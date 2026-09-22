@@ -2,64 +2,6 @@ import AppKit
 
 /// Native AppKit menu and controls. Configuration choices expand inline, not in a submenu.
 final class StatusMenu: NSObject, NSMenuDelegate {
-    /// Row metrics for the custom-view items. AppKit draws standard items itself but hands a
-    /// custom view the bare item rect, so those views repeat the leading inset AppKit uses for a
-    /// title. No item in this menu carries a checkmark or state image, which would add a column
-    /// and push every title sideways. `trailing` is measured from a probe menu at launch.
-    private enum Metrics {
-        static let rowHeight: CGFloat = 24
-        static let statusIconHeight: CGFloat = 18
-        static let titleInset: CGFloat = 14
-        static let labelHeight: CGFloat = 18
-        static let disclosureSize: CGFloat = 16
-        static let gap: CGFloat = 10
-        static let shortcutGap: CGFloat = 24
-        static let minWidth: CGFloat = 240
-        static let maxWidth: CGFloat = 320
-        static let iconPoint: CGFloat = 13
-        /// Every list icon is drawn centred in a square of this size, so names keep one left edge
-        /// whatever the symbol's own ink box is.
-        static let iconColumn: CGFloat = 16
-        /// Spare width kept clear of AppKit's own truncation, which drops a whole trailing word
-        /// instead of clipping with an ellipsis. Titles carrying an icon need the wider margin.
-        static let slack: CGFloat = 16
-        static let iconSlack: CGFloat = 30
-        static let folderTitle = "Open Configurations Folder"
-        static let loginTitle = "Launch at Login"
-    }
-
-    /// A text-only menu row: plain text on the left and, for the shortcut rows, the key
-    /// combination on the right, the way AppKit lays out a key equivalent.
-    private final class InfoRow {
-        let view = NSView()
-        let label = NSTextField(labelWithString: "")
-        let shortcut = NSTextField(labelWithString: "")
-        let item = NSMenuItem()
-
-        init(_ text: String) {
-            label.stringValue = text
-            label.font = .menuFont(ofSize: 0)
-            label.textColor = .labelColor
-            label.lineBreakMode = .byTruncatingTail
-            shortcut.font = .menuFont(ofSize: 0)
-            shortcut.textColor = .secondaryLabelColor
-            shortcut.alignment = .right
-            view.addSubview(label)
-            view.addSubview(shortcut)
-            item.view = view
-        }
-
-        func layout(width: CGFloat, shortcutWidth: CGFloat) {
-            view.frame = NSRect(x: 0, y: 0, width: width, height: Metrics.rowHeight)
-            let y = (Metrics.rowHeight - Metrics.labelHeight) / 2
-            shortcut.frame = NSRect(x: width - Metrics.titleInset - shortcutWidth, y: y,
-                                    width: shortcutWidth, height: Metrics.labelHeight)
-            label.frame = NSRect(x: Metrics.titleInset, y: y,
-                                 width: shortcut.frame.minX - Metrics.shortcutGap - Metrics.titleInset,
-                                 height: Metrics.labelHeight)
-        }
-    }
-
     private let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private let menu = NSMenu()
     private let stateRow = InfoRow("State: Off")
@@ -71,11 +13,11 @@ final class StatusMenu: NSObject, NSMenuDelegate {
     private let stopItem = NSMenuItem(title: "Stop CueTap", action: #selector(stopDemo), keyEquivalent: "")
     private let row = NSView()
     private let disclosure = NSButton(title: "", target: nil, action: nil)
-    private let label = NSTextField(labelWithString: "Configuration")
-    private let trailing: CGFloat
-    private var rowWidth: CGFloat = Metrics.minWidth
+    let label = NSTextField(labelWithString: "Configuration")
+    let trailing: CGFloat
+    var rowWidth: CGFloat = Metrics.minWidth
     private var choiceItems: [NSMenuItem] = []
-    private var icons: [String: NSImage] = [:]
+    var icons: [String: NSImage] = [:]
     private var expanded = false
     private var canSelect = true
     private let configurations: () throws -> [ConfigurationInfo]
@@ -145,24 +87,6 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         item.button?.setAccessibilityLabel("CueTap")
     }
 
-    /// The status bar icon is a template image drawn from the symbol, the "interface icon" the
-    /// HIG allows for a menu bar extra. Handing the symbol over with a point size baked in gets
-    /// it clipped top and bottom by the status bar button's own symbol layout, the button's
-    /// symbolConfiguration property is ignored there, and the bare symbol draws only 14 pt of
-    /// glyph while pushing the button past the 22 pt strip. Drawn into an 18 pt image the glyph
-    /// is 16 pt high, whole, and the button stays at the strip's height.
-    private static func statusImage(_ symbol: NSImage) -> NSImage {
-        let source = symbol.withSymbolConfiguration(.init(scale: .large)) ?? symbol
-        let height = Metrics.statusIconHeight
-        let width = (source.size.width / source.size.height * height).rounded()
-        let image = NSImage(size: NSSize(width: width, height: height), flipped: false) { bounds in
-            source.draw(in: bounds)
-            return true
-        }
-        image.isTemplate = true
-        return image
-    }
-
     func update(active: Bool, name: String, segment: Int, count: Int, hotkey: String, advance: String, canSelect: Bool) {
         self.canSelect = canSelect
         stateRow.label.stringValue = active ? "State: On" : "State: Off"
@@ -191,28 +115,6 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         disclosure.state = .off
         disclosure.setAccessibilityLabel("Expand configurations")
         rebuildChoices()
-    }
-
-    /// Key combinations in the usual macOS order and glyphs, for example ⇧⌘R and ⌘ Click.
-    private static func symbols(_ shortcut: String) -> String {
-        let glyphs = ["ctrl": "⌃", "control": "⌃", "option": "⌥", "alt": "⌥", "shift": "⇧", "cmd": "⌘", "command": "⌘"]
-        var modifiers: Set<String> = []
-        var key = ""
-        for part in shortcut.lowercased().split(separator: "+").map(String.init) {
-            if let glyph = glyphs[part] { modifiers.insert(glyph) } else { key = part }
-        }
-        let prefix = ["⌃", "⌥", "⇧", "⌘"].filter { modifiers.contains($0) }.joined()
-        return prefix + (key == "click" ? " Click" : key.uppercased())
-    }
-
-    /// Width AppKit adds around a standard item title, minus the leading inset the labels repeat.
-    private static func trailingInset() -> CGFloat {
-        let font = NSFont.menuFont(ofSize: 0)
-        let probe = String(repeating: "N", count: 30)
-        let text = (probe as NSString).size(withAttributes: [.font: font]).width
-        let menu = NSMenu()
-        menu.addItem(NSMenuItem(title: probe, action: nil, keyEquivalent: ""))
-        return min(max(menu.size.width - text - Metrics.titleInset, 10), 30)
     }
 
     /// Rows are as wide as their content, so a custom item cannot stretch the whole menu. All of
@@ -278,122 +180,6 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         let row = NSMenuItem(title: clip(text, to: rowWidth - Metrics.titleInset - trailing - Metrics.slack), action: nil, keyEquivalent: "")
         row.isEnabled = false
         choiceItems.append(row)
-    }
-
-    /// A switch row: plain title on the left and a rounded On/Off badge pushed to the right edge
-    /// by a tab stop, the way a system menu shows a state a click will flip.
-    private func badgeTitle(_ text: String, _ state: String) -> NSAttributedString {
-        let style = NSMutableParagraphStyle()
-        style.tabStops = [NSTextTab(textAlignment: .right,
-                                    location: rowWidth - Metrics.titleInset - trailing, options: [:])]
-        let title = NSMutableAttributedString(string: text + "\t", attributes: [
-            .font: NSFont.menuFont(ofSize: 0), .foregroundColor: NSColor.labelColor])
-        let image = badge(state)
-        let attachment = NSTextAttachment()
-        attachment.image = image
-        attachment.bounds = NSRect(x: 0, y: -4, width: image.size.width, height: image.size.height)
-        title.append(NSAttributedString(attachment: attachment))
-        title.addAttribute(.paragraphStyle, value: style, range: NSRange(location: 0, length: title.length))
-        return title
-    }
-
-    private func badge(_ text: String) -> NSImage {
-        let font = NSFont.systemFont(ofSize: 11, weight: .medium)
-        let size = (text as NSString).size(withAttributes: [.font: font])
-        let box = NSSize(width: (size.width + 16).rounded(.up), height: 17)
-        let image = NSImage(size: box)
-        image.lockFocus()
-        NSColor.tertiaryLabelColor.setFill()
-        NSBezierPath(roundedRect: NSRect(origin: .zero, size: box),
-                     xRadius: box.height / 2, yRadius: box.height / 2).fill()
-        (text as NSString).draw(at: NSPoint(x: (box.width - size.width) / 2, y: (box.height - size.height) / 2),
-                                withAttributes: [.font: font, .foregroundColor: NSColor.labelColor])
-        image.unlockFocus()
-        return image
-    }
-
-    /// An SF Symbol inside the title keeps the icon under this code's control: an item image is
-    /// not drawn in this menu at all.
-    private func choiceTitle(_ symbol: String, _ text: String) -> NSAttributedString {
-        let font = NSFont.menuFont(ofSize: 0)
-        let title = NSMutableAttributedString()
-        if let icon = tinted(symbol) {
-            let attachment = NSTextAttachment()
-            attachment.image = icon
-            // The icon box is centred on the text's optical centre, half the cap height above
-            // the baseline, so the symbol and the name sit on the same line.
-            attachment.bounds = NSRect(x: 0, y: (font.capHeight - icon.size.height) / 2,
-                                       width: icon.size.width, height: icon.size.height)
-            title.append(NSAttributedString(attachment: attachment))
-        }
-        title.append(NSAttributedString(string: "  " + text, attributes: [
-            .font: font, .foregroundColor: NSColor.labelColor]))
-        return title
-    }
-
-    /// Template images are not tinted inside an attributed string, so the symbol is drawn once in
-    /// the label colour. Each symbol has its own ink box, so the drawn pixels are centred in one
-    /// square box: the names after the icons then share a left edge.
-    private func tinted(_ symbol: String) -> NSImage? {
-        if let cached = icons[symbol] { return cached }
-        guard let base = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)?
-            .withSymbolConfiguration(.init(pointSize: Metrics.iconPoint, weight: .regular)) else { return nil }
-        let ink = Self.inkBounds(base)
-        let box = NSSize(width: Metrics.iconColumn, height: Metrics.iconColumn)
-        let out = NSImage(size: box)
-        out.lockFocus()
-        base.draw(at: NSPoint(x: (box.width - ink.width) / 2 - ink.minX,
-                              y: (box.height - ink.height) / 2 - ink.minY),
-                  from: .zero, operation: .sourceOver, fraction: 1)
-        NSColor.labelColor.set()
-        NSRect(origin: .zero, size: box).fill(using: .sourceAtop)
-        out.unlockFocus()
-        icons[symbol] = out
-        return out
-    }
-
-    /// The rectangle the symbol actually paints, in image coordinates. A symbol image carries its
-    /// own padding, so centring the image is not the same as centring the glyph.
-    private static func inkBounds(_ image: NSImage) -> NSRect {
-        let width = Int(ceil(image.size.width)), height = Int(ceil(image.size.height))
-        let full = NSRect(origin: .zero, size: image.size)
-        guard width > 0, height > 0,
-              let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: width, pixelsHigh: height,
-                                         bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
-                                         colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)
-        else { return full }
-        NSGraphicsContext.saveGraphicsState()
-        NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
-        image.draw(at: .zero, from: .zero, operation: .sourceOver, fraction: 1)
-        NSGraphicsContext.restoreGraphicsState()
-        var minX = width, maxX = -1, minY = height, maxY = -1
-        for y in 0..<height {
-            for x in 0..<width where (rep.colorAt(x: x, y: y)?.alphaComponent ?? 0) > 0.05 {
-                minX = min(minX, x); maxX = max(maxX, x)
-                minY = min(minY, y); maxY = max(maxY, y)
-            }
-        }
-        guard maxX >= minX, maxY >= minY else { return full }
-        // Bitmap rows run from the top; the drawing origin runs from the bottom.
-        return NSRect(x: CGFloat(minX), y: CGFloat(height - 1 - maxY),
-                      width: CGFloat(maxX - minX + 1), height: CGFloat(maxY - minY + 1))
-    }
-
-    private func width(of text: String, font: NSFont? = nil) -> CGFloat {
-        (text as NSString).size(withAttributes: [.font: font ?? label.font ?? NSFont.menuFont(ofSize: 0)]).width
-    }
-
-    /// Tail truncation with an ellipsis, so a long name is shortened here rather than by AppKit,
-    /// which would drop a whole word and leave no sign that anything is missing.
-    private func clip(_ text: String, to limit: CGFloat, font: NSFont? = nil) -> String {
-        guard width(of: text, font: font) > limit else { return text }
-        var head = text
-        while !head.isEmpty {
-            head.removeLast()
-            let candidate = head + "…"
-            if width(of: candidate, font: font) <= limit { return candidate }
-        }
-        return "…"
     }
 
     private func report(_ response: ControlResponse, action: String) {

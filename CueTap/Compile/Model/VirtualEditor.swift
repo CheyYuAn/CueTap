@@ -153,6 +153,12 @@ struct VirtualEditor {
         let previousLine = row > 0 ? lines[row - 1] : ""
         let editRow = row
         var inserted = 1
+        if profile.plain {
+            // A text field just breaks the line; whatever follows the cursor moves down unindented.
+            replaceCurrentLine(with: [before, after], cursorRow: 1, cursorColumn: 0)
+            autoWhitespaceRows = []
+            return
+        }
         if let action = enterAction(before: before, after: after, previousLine: previousLine) {
             switch action.action {
             case .none, .indent:

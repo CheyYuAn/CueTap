@@ -179,6 +179,39 @@ final class KeystrokeCompilerTests: XCTestCase {
         XCTAssertEqual(segment.entries.first, .text("<script></script>"))
     }
 
+    func testPlainProfileTypesIndentationAndNeverPressesTabOrBackspace() throws {
+        let target = "Dear team,\n\n    First point: ship it (soon).\n    Second point: \"quotes\" stay pairs.\n\nThanks\n"
+        let profile = EditorProfile.plainProfile
+        let segment = try KeystrokeCompiler(profile: profile).compile(target, name: "note.txt")
+        var editor = VirtualEditor(profile: profile)
+        for entry in segment.entries {
+            switch entry {
+            case .text(let value): for character in value { editor.apply(.character(character)) }
+            case .key(let key, let count):
+                XCTAssertTrue(["left", "right", "enter"].contains(key), "plain profiles type indentation instead of pressing \(key)")
+                let action: DemoAction = ["left": .left, "right": .right, "enter": .enter, "tab": .tab, "backspace": .backspace][key]!
+                for _ in 0..<count { editor.apply(action) }
+            }
+        }
+        XCTAssertEqual(editor.text + "\n", target)
+        XCTAssertTrue(segment.entries.contains(.text("()")), "pairs are still typed as pairs")
+        XCTAssertTrue(segment.entries.contains { if case .text(let value) = $0 { return value.hasPrefix("    First point: ship it") }; return false }, "indentation is typed as text")
+        XCTAssertFalse(segment.entries.contains(.text("''")), "apostrophes never pair in plain text")
+
+        let shell = "if [ -f config ]; then\n    source config\nfi\n"
+        let shellSegment = try KeystrokeCompiler(profile: profile).compile(shell, name: "run.sh")
+        var terminal = VirtualEditor(profile: profile)
+        for entry in shellSegment.entries {
+            switch entry {
+            case .text(let value): for character in value { terminal.apply(.character(character)) }
+            case .key(let key, let count):
+                let action: DemoAction = ["left": .left, "right": .right, "enter": .enter, "tab": .tab, "backspace": .backspace][key]!
+                for _ in 0..<count { terminal.apply(action) }
+            }
+        }
+        XCTAssertEqual(terminal.text + "\n", shell)
+    }
+
     func testRenderedConfigurationDecodesAndKeepsTheHandWrittenLayout() throws {
         let segment = try compile("f(\"a\");")
         let rendered = ConfigurationWriter.render(name: "Demo", description: "描述 \"x\"", segments: [(name: "one", description: "", entries: segment.entries)])

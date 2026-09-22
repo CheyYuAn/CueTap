@@ -151,7 +151,7 @@ final class AgentControlIntegrationTests: XCTestCase {
         XCTAssertEqual(next.1.status?.executable, second.path)
     }
     func testJSONErrorsAndVersionAreMachineReadable() throws {
-        XCTAssertEqual(try command(["version"]).1.version, "0.4.0")
+        XCTAssertEqual(try command(["version"]).1.version, "0.5.0")
         XCTAssertEqual(try command(["validate", ExampleFixture.url.path]).1.status?.actionCount, 38)
         XCTAssertEqual(try command(["hotkey", "set", "cmd+r"]).0, 2)
         XCTAssertEqual(try command(["reload"]).1.error?.code, "not_running")

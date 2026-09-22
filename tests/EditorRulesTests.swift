@@ -82,6 +82,49 @@ final class EditorRulesTests: XCTestCase {
         for (language, snapshot) in BuiltInRules.snapshots { XCTAssertNoThrow(try EditorRules.parse(Data(snapshot.json.utf8)), language) }
     }
 
+    func testEveryBundledVSCodeLanguageResolvesWithoutAnInstallation() throws {
+        XCTAssertGreaterThanOrEqual(VSCodeBuiltInRules.languages.count, 70)
+        for language in VSCodeBuiltInRules.languages.keys {
+            let profile = try EditorProfile.resolve(name: "vscode-\(language)", rulesPath: nil, tabSize: 4, insertSpaces: true, tags: nil, roots: [])
+            XCTAssertTrue(profile.rulesSource.hasPrefix("built-in snapshot of VS Code \(VSCodeBuiltInRules.version)"), language)
+        }
+        let tsx = try EditorProfile.resolve(name: "vscode-typescriptreact", rulesPath: nil, tabSize: 4, insertSpaces: true, tags: nil, roots: [])
+        XCTAssertTrue(tsx.rulesSource.contains("with built-in snapshot of VS Code \(VSCodeBuiltInRules.version) extensions/javascript/tags-language-configuration.json"))
+        XCTAssertTrue(tsx.tags)
+        let html = try EditorProfile.resolve(name: "vscode-html", rulesPath: nil, tabSize: 4, insertSpaces: true, tags: nil, roots: [])
+        XCTAssertEqual(Set(html.embedded.keys), ["script", "style"])
+        XCTAssertEqual(html.embedded["script"]?.lineComment, "//")
+        XCTAssertThrowsError(try EditorProfile.resolve(name: "vscode-nosuchlanguage", rulesPath: nil, tabSize: 4, insertSpaces: true, tags: nil, roots: [])) { error in
+            XCTAssertEqual((error as? ControlError)?.code, "profile_not_found")
+        }
+    }
+
+    func testPlainProfileHasNoRulesAndTypesIndentation() throws {
+        let plain = try EditorProfile.resolve(name: "plain", rulesPath: nil, tabSize: 2, insertSpaces: true, tags: nil, roots: [])
+        XCTAssertTrue(plain.plain)
+        XCTAssertFalse(plain.tags)
+        XCTAssertNil(plain.languageId)
+        XCTAssertEqual(plain.rules.brackets.count, 3)
+        XCTAssertEqual(plain.rules.quotes, ["\""])
+        XCTAssertFalse(plain.rules.hasIndentationRules)
+        XCTAssertTrue(plain.rules.onEnterRules.isEmpty)
+        XCTAssertEqual(plain.tabSize, 2)
+        XCTAssertTrue(try EditorProfile.resolve(name: "plain", rulesPath: nil, tabSize: 4, insertSpaces: true, tags: true, roots: []).tags)
+    }
+
+    func testInstalledRulesWinOverTheBundledSnapshot() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("cuetap-rules-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root.appendingPathComponent("ext/languages"), withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try Data(#"{"name":"ext","contributes":{"languages":[{"id":"go","configuration":"./languages/go.json"}]}}"#.utf8).write(to: root.appendingPathComponent("ext/package.json"))
+        try Data(#"{"comments":{"lineComment":"%%"},"brackets":[["{","}"]]}"#.utf8).write(to: root.appendingPathComponent("ext/languages/go.json"))
+        let installed = try EditorProfile.resolve(name: "vscode-go", rulesPath: nil, tabSize: 4, insertSpaces: true, tags: nil, roots: [root])
+        XCTAssertEqual(installed.rules.lineComment, "%%")
+        XCTAssertTrue(installed.rulesSource.hasSuffix("go.json"))
+        let bundled = try EditorProfile.resolve(name: "vscode-go", rulesPath: nil, tabSize: 4, insertSpaces: true, tags: nil, roots: [])
+        XCTAssertEqual(bundled.rules.lineComment, "//")
+    }
+
     func testHTMLAndVueRulesParseWithTagPatterns() throws {
         let html = try CompileFixture.profile("html").rules
         XCTAssertTrue(html.hasIndentationRules)

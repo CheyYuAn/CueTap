@@ -37,25 +37,3 @@ struct TextComparison: Codable {
         return TextComparison(identical: true, line: nil, column: nil, expected: nil, actual: nil, trailingNewline: trailing)
     }
 }
-
-struct DiffCommand {
-    let expectedPath: String
-    let actualPath: String
-
-    func run() throws -> ControlResponse {
-        func read(_ path: String) throws -> String {
-            let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath).standardizedFileURL
-            do { return try String(contentsOf: url, encoding: .utf8) }
-            catch { throw ControlError("target_unreadable", "Cannot read \(url.path) as UTF-8 text: \(error)") }
-        }
-        let comparison = TextComparison.compare(expected: try read(expectedPath), actual: try read(actualPath))
-        if comparison.identical {
-            var response = ControlResponse(message: "The files match character for character. Trailing newline: \(comparison.trailingNewline).")
-            response.comparison = comparison
-            return response
-        }
-        var response = ControlResponse.failure(ControlError("text_mismatch", "First difference at line \(comparison.line ?? 0), column \(comparison.column ?? 0). Expected \(comparison.expected.map { "\"\($0)\"" } ?? "no line"), actual \(comparison.actual.map { "\"\($0)\"" } ?? "no line"). Trailing newline: \(comparison.trailingNewline)."))
-        response.comparison = comparison
-        return response
-    }
-}

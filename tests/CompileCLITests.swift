@@ -109,6 +109,35 @@ final class CompileCLITests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: folder.appendingPathComponent("out.json").path))
     }
 
+    func testProfilesListBundledAndInstalledLanguagesWithExtensions() throws {
+        let bundled = try ProfilesCommand(roots: []).run()
+        let profiles = try XCTUnwrap(bundled.profiles)
+        XCTAssertGreaterThanOrEqual(profiles.count, 71)
+        XCTAssertEqual(profiles.first?.name, "plain")
+        XCTAssertEqual(profiles.first?.source, "built-in")
+        XCTAssertTrue(profiles.dropFirst().allSatisfy { $0.source == "bundled" && $0.name == "vscode-" + $0.languageId })
+        let c = try XCTUnwrap(profiles.first { $0.languageId == "c" })
+        XCTAssertTrue(c.extensions.contains(".c"))
+        XCTAssertFalse(c.tags)
+        XCTAssertTrue(try XCTUnwrap(profiles.first { $0.languageId == "typescriptreact" }).tags)
+        XCTAssertEqual(profiles.dropFirst().map(\.languageId), profiles.dropFirst().map(\.languageId).sorted())
+
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("cuetap-profiles-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root.appendingPathComponent("ext"), withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try Data(#"{"contributes":{"languages":[{"id":"go","configuration":"./go.json"},{"id":"zig","configuration":"./zig.json","extensions":[".zig"]}]}}"#.utf8).write(to: root.appendingPathComponent("ext/package.json"))
+        try Data(#"{"brackets":[["{","}"]]}"#.utf8).write(to: root.appendingPathComponent("ext/go.json"))
+        try Data(#"{"brackets":[["{","}"]]}"#.utf8).write(to: root.appendingPathComponent("ext/zig.json"))
+        let mixed = try XCTUnwrap(try ProfilesCommand(roots: [root]).run().profiles)
+        let go = try XCTUnwrap(mixed.first { $0.languageId == "go" })
+        XCTAssertEqual(go.source, "installed")
+        XCTAssertTrue(go.rulesSource.hasSuffix("go.json"))
+        XCTAssertTrue(go.extensions.contains(".go"), "extensions fall back to the bundled list")
+        let zig = try XCTUnwrap(mixed.first { $0.languageId == "zig" })
+        XCTAssertEqual(zig.extensions, [".zig"])
+        XCTAssertEqual(mixed.count, profiles.count + 1)
+    }
+
     func testDiffReportsTheFirstDifferenceAndExitsOneOnMismatch() throws {
         let expected = folder.appendingPathComponent("expected.c"), actual = folder.appendingPathComponent("actual.c")
         try "int x;\n    y;\n}\n".write(to: expected, atomically: true, encoding: .utf8)
@@ -131,5 +160,23 @@ final class CompileCLITests: XCTestCase {
         XCTAssertEqual(plain.status, 1)
         XCTAssertTrue(plain.output.contains("Expected:     y;"), plain.output)
         XCTAssertEqual(try run(["diff", expected.path]).status, 2)
+
+        // Several pairs at once, one per segment: every pair is reported, the exit code covers all.
+        let second = folder.appendingPathComponent("second.py"), typed = folder.appendingPathComponent("typed.py")
+        try "print(1)\n".write(to: second, atomically: true, encoding: .utf8)
+        try "print(1)\n".write(to: typed, atomically: true, encoding: .utf8)
+        let pairs = try run(["diff", expected.path, actual.path, second.path, typed.path, "--json"])
+        XCTAssertEqual(pairs.status, 1)
+        let pairResponse = try json(pairs.output)
+        let comparisons = try XCTUnwrap(pairResponse["comparisons"] as? [[String: Any]])
+        XCTAssertEqual(comparisons.count, 2)
+        XCTAssertEqual((comparisons[0]["comparison"] as? [String: Any])?["identical"] as? Bool, false)
+        XCTAssertEqual((comparisons[1]["comparison"] as? [String: Any])?["identical"] as? Bool, true)
+        XCTAssertEqual(comparisons[1]["actual"] as? String, typed.path)
+        XCTAssertTrue(((pairResponse["error"] as? [String: Any])?["message"] as? String ?? "").hasPrefix("1 of 2 pairs differ."))
+        try "int x;\n    y;\n}\n".write(to: actual, atomically: true, encoding: .utf8)
+        let allSame = try run(["diff", expected.path, actual.path, second.path, typed.path, "--json"])
+        XCTAssertEqual(allSame.status, 0, allSame.output)
+        XCTAssertTrue((try json(allSame.output)["message"] as? String ?? "").hasPrefix("All 2 pairs match"))
     }
 }

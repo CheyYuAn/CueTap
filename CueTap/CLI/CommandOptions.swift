@@ -1,7 +1,7 @@
 import Foundation
 
 struct CommandOptions {
-    enum Mode: String { case run, start, status, check, doctor, config, validate, help, version, load, reload, stop, quit, hotkeyGet, hotkeySet, advanceGet, advanceSet, compile, diff }
+    enum Mode: String { case run, start, status, check, doctor, config, validate, help, version, load, reload, stop, quit, hotkeyGet, hotkeySet, advanceGet, advanceSet, compile, diff, profiles }
     let mode: Mode
     let scriptURL: URL
     let explicitScript: Bool
@@ -9,7 +9,7 @@ struct CommandOptions {
     let hotkey: String?
     let configuration: ConfigurationCommand?
     var compile: CompileOptions?
-    var diffPaths: (expected: String, actual: String)?
+    var diffPairs: [(expected: String, actual: String)] = []
 
     init(arguments: [String], executableURL: URL) throws {
         var args = arguments
@@ -31,10 +31,15 @@ struct CommandOptions {
                 selected = .compile
                 compile = try CompileOptions(arguments: args)
                 args = []
+            case "profiles":
+                guard args.isEmpty else { throw ScriptError("Usage: cuetap profiles [--json]") }
+                selected = .profiles
             case "diff":
-                guard args.count == 2, !args[0].hasPrefix("--"), !args[1].hasPrefix("--") else { throw ScriptError("Usage: cuetap diff EXPECTED_FILE ACTUAL_FILE [--json]") }
+                guard args.count >= 2, args.count % 2 == 0, !args.contains(where: { $0.hasPrefix("--") }) else {
+                    throw ScriptError("Usage: cuetap diff EXPECTED_FILE ACTUAL_FILE [EXPECTED_FILE ACTUAL_FILE ...] [--json]")
+                }
                 selected = .diff
-                diffPaths = (args[0], args[1])
+                diffPairs = stride(from: 0, to: args.count, by: 2).map { (args[$0], args[$0 + 1]) }
                 args = []
             case "advance":
                 if args == ["get"] { selected = .advanceGet; args = [] }
@@ -45,7 +50,7 @@ struct CommandOptions {
                 else if args.count == 2, args[0] == "set" { selected = .hotkeySet; args.removeFirst() }
                 else { throw ScriptError("Usage: cuetap hotkey get | hotkey set cmd+shift+r") }
             default:
-                guard let mode = Mode(rawValue: first), ![.run, .hotkeyGet, .hotkeySet, .advanceGet, .advanceSet, .compile, .diff].contains(mode) else {
+                guard let mode = Mode(rawValue: first), ![.run, .hotkeyGet, .hotkeySet, .advanceGet, .advanceSet, .compile, .diff, .profiles].contains(mode) else {
                     throw ScriptError("Unknown command: \(first). Run cuetap --help for usage.")
                 }
                 selected = mode
