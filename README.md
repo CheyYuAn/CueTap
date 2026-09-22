@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="LICENSE"><img alt="license MIT" src="https://img.shields.io/badge/license-MIT-blue"></a>
-  <img alt="version 0.4.0" src="https://img.shields.io/badge/version-0.4.0-brightgreen">
+  <img alt="version 0.5.0" src="https://img.shields.io/badge/version-0.5.0-brightgreen">
   <img alt="macOS 26.3+" src="https://img.shields.io/badge/macOS-26.3%2B-lightgrey">
   <img alt="no network" src="https://img.shields.io/badge/network-none-informational">
   <a href="https://github.com/CheyYuAn/CueTap/stargazers"><img alt="stars" src="https://img.shields.io/github/stars/CheyYuAn/CueTap?cacheSeconds=600"></a>
@@ -107,9 +107,9 @@ You do not have to write actions by hand. Put the text you want to type in a fil
 cuetap compile --profile vscode-c --output demo.json main.c
 ```
 
-The compiler types every pair as both halves and a step back inside, writes tags as an empty element and fills the attributes in afterwards, leaves indentation to the editor and presses Tab or Backspace only where the editor's own rules would land somewhere else, and steps over closing braces and tags the editor has already placed. It replays the result through a model of the editor before writing anything, and reports the VS Code settings that would break the demo. Profiles are `vscode-<language id>` for every language VS Code or an installed extension defines, from `vscode-c` and `vscode-python` to `vscode-vue` and `vscode-typescriptreact`; another editor takes `--rules FILE` with a file shaped like VS Code's language-configuration.json. After the demo, `cuetap diff main.c typed.c` reports the first character that differs.
+The compiler types every pair as both halves and a step back inside, writes tags as an empty element and fills the attributes in afterwards, leaves indentation to the editor and presses Tab or Backspace only where the editor's own rules would land somewhere else, and steps over closing braces and tags the editor has already placed. It replays the result through a model of the editor before writing anything, and reports the VS Code settings that would break the demo. Profiles are `vscode-<language id>` for every language VS Code defines, from `vscode-c` and `vscode-python` to `vscode-vue` and `vscode-typescriptreact`; their rules are built into the executable, so compiling works without VS Code installed, and an installed VS Code adds the languages its extensions define. `plain` is for anything typed outside a code editor, a terminal, a browser field or a notes app, where indentation has to be typed and nothing closes a bracket for you. Another editor takes `--rules FILE` with a file shaped like VS Code's language-configuration.json. After the demo, `cuetap diff main.c typed.c` reports the first character that differs.
 
-CueTap emits exactly what the configuration says. It does not read your document, predict the cursor or fix indentation.
+CueTap emits exactly what the configuration says. It does not read your document, predict the cursor or fix indentation. It types the 95 printable ASCII characters plus Enter, Tab, Backspace and the arrow keys, and switches to the ABC input source while a demo runs, so text in other scripts is out of scope.
 
 Indentation stays your editor's job and configurations count on it, so leave auto-indent on and spend a `backspace` action where a line moves back out one level. Turn off whatever types on your behalf: tag completion, bracket and quote completion, and Enter accepting a suggestion all insert characters the configuration is already sending. [editor-setup.md](Skills/cuetap/references/editor-setup.md) lists the settings. Test a new configuration in the editor you will present with.
 
@@ -119,11 +119,11 @@ Full format: [configuration.md](Skills/cuetap/references/configuration.md).
 
 `cuetap --help` lists everything, and every command takes `--json`.
 
-Process control is `start`, `stop`, `quit`, `status`. Configurations are `config list|use|rename|export|remove`, plus `load` and `reload`. Building them is `compile` and checking a demo's output is `diff`. Shortcuts are `hotkey` and `advance`. Diagnostics are `doctor` and `validate`. Configurations and shortcuts change only while no demo is running.
+Process control is `start`, `stop`, `quit`, `status`. Configurations are `config list|use|rename|export|remove`, plus `load` and `reload`. Building them is `compile`, `profiles` lists the languages it accepts, and checking a demo's output is `diff`. Shortcuts are `hotkey` and `advance`. Diagnostics are `doctor` and `validate`. Configurations and shortcuts change only while no demo is running.
 
 ## With an AI agent
 
-[`Skills/cuetap/`](Skills/cuetap) is an Agent Skill. Hand a coding agent whatever you plan to type and it compiles, imports and selects the configuration for you. Starting the demo stays with you, at the keyboard, in front of the audience.
+[`Skills/cuetap/`](Skills/cuetap) is an Agent Skill in the Claude Code layout. Copy that folder from this repository to `~/.claude/skills/cuetap` (or your agent's skills directory), then hand the agent whatever you plan to type and it compiles, imports and selects the configuration for you. Starting the demo stays with you, at the keyboard, in front of the audience.
 
 ## Privacy
 
@@ -131,4 +131,4 @@ No network connections, and keystrokes are never logged. `~/Library/Logs/CueTap/
 
 ## License
 
-MIT
+MIT. The bundled editor rule files are Microsoft's and the Vue team's, under their own MIT licenses; see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).

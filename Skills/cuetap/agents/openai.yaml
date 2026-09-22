@@ -1,4 +1,0 @@
-interface:
-  display_name: "CueTap"
-  short_description: "Create, manage, and troubleshoot CueTap demos via CLI"
-  default_prompt: "Use $cuetap to prepare or select the keyboard demo I need."
