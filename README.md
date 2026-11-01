@@ -1,7 +1,7 @@
 <h1 align="center">CueTap</h1>
 
 <p align="center">
-  Typing you prepared in advance, replayed one keystroke at a time.
+  Press any keys to type your prepared code in a human-like order across apps—no recording needed. All in one tool.
 </p>
 
 <p align="center">
@@ -27,11 +27,12 @@
   <img src="assets/typing.webp" height="300" alt="Three prepared snippets appearing in an editor while the presenter types freely, each one landing where the cursor was placed">
 </p>
 
-CueTap replays typing you prepared in advance, for live demos, talks, screencasts and teaching. Code, prose, commands, form fields, anything you can type.
+- **No rehearsal recording required.** Give CueTap your finished code or text, and it generates the typing steps for your chosen environment. You don't need to type everything once to record a demo.
+- **Code that takes shape like it does in real life.** CueTap can type both brackets, move the cursor back inside to fill them, or create an empty tag before adding its attributes. These are the kinds of steps people take when writing code, making the demo feel more like real coding. CueTap generates them from your finished code—without a recording, a capability many similar tools don't offer.
+- **Present across apps.** Use CueTap in editors, terminals, browser fields and other apps. A single demo can move between files, windows and applications.
+- **Stay out of the way.** CueTap is a macOS command line tool with a menu bar icon: no main window, no Dock icon and no network access.
 
-You type at whatever rhythm your explanation takes and CueTap emits the prepared characters instead of yours. The typing looks real because it is real, but typos cannot happen.
-
-It is one macOS command line tool with a menu bar icon. No window, no Dock icon, no recording, no network access.
+You can ask your AI agent to read this README and set up CueTap for you, or follow the instructions below yourself. CueTap's CLI lets your agent manage configurations and control the tool: send it your code and tell it what you need, and it can prepare the demo and help turn features on or off. See [With an AI agent](#with-an-ai-agent) for the included agent skill.
 
 ## Install
 
